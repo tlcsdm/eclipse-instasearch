@@ -14,94 +14,107 @@ package com.tlcsdm.eclipse.instasearch.indexing.tokenizers;
 import java.io.IOException;
 import java.util.LinkedList;
 
-import org.apache.lucene.analysis.Token;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
-import org.apache.lucene.analysis.tokenattributes.TermAttribute;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 /**
  * Splits terms. Returns the original term and its split parts
  */
 public abstract class TermSplitTokenizer extends TokenFilter {
 
-	private LinkedList<Token> tokens = new LinkedList<Token>();
+    private LinkedList<SimpleToken> tokens = new LinkedList<SimpleToken>();
 
-	private TermAttribute termAtt;
-	private OffsetAttribute offsetAtt;
-	private PositionIncrementAttribute posAtt;
+    private CharTermAttribute termAtt;
+    private OffsetAttribute offsetAtt;
+    private PositionIncrementAttribute posAtt;
 
-	public TermSplitTokenizer(TokenStream in) {
-		super(in);
+    public TermSplitTokenizer(TokenStream in) {
+        super(in);
 
-		assert (in.hasAttribute(TermAttribute.class));
-		assert (in.hasAttribute(OffsetAttribute.class));
-		assert (in.hasAttribute(PositionIncrementAttribute.class));
+        assert (in.hasAttribute(CharTermAttribute.class));
+        assert (in.hasAttribute(OffsetAttribute.class));
+        assert (in.hasAttribute(PositionIncrementAttribute.class));
 
-		termAtt = (TermAttribute) addAttribute(TermAttribute.class);
-		offsetAtt = (OffsetAttribute) addAttribute(OffsetAttribute.class);
-		posAtt = (PositionIncrementAttribute) addAttribute(PositionIncrementAttribute.class);
-	}
+        termAtt = (CharTermAttribute) addAttribute(CharTermAttribute.class);
+        offsetAtt = (OffsetAttribute) addAttribute(OffsetAttribute.class);
+        posAtt = (PositionIncrementAttribute) addAttribute(PositionIncrementAttribute.class);
+    }
 
-	@Override
-	public boolean incrementToken() throws IOException {
-		if (!tokens.isEmpty()) {
-			applyToken(tokens.removeFirst());
-		} else if (input.incrementToken()) {
-			splitIntoTokens();
+    @Override
+    public boolean incrementToken() throws IOException {
+        if (!tokens.isEmpty()) {
+            applyToken(tokens.removeFirst());
+        } else if (input.incrementToken()) {
+            splitIntoTokens();
 
-			if (!tokens.isEmpty()) {
-				if (!returnOriginalTerm())
-					applyToken(tokens.removeFirst());
-			}
-		} else {
-			return false; // does not have any more tokens
-		}
+            if (!tokens.isEmpty()) {
+                if (!returnOriginalTerm())
+                    applyToken(tokens.removeFirst());
+            }
+        } else {
+            return false; // does not have any more tokens
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	private void splitIntoTokens() {
-		String term = termAtt.term();
-		String[] termParts = splitTerm(term);
+    private void splitIntoTokens() {
+        String term = termAtt.toString();
+        String[] termParts = splitTerm(term);
 
-		if (termParts.length > 1) {
-			int termPos = offsetAtt.startOffset();
+        if (termParts.length > 1) {
+            int termPos = offsetAtt.startOffset();
 
-			for (int i = 0; i < termParts.length; i++) {
-				String termPart = termParts[i];
-				int termPartPos = termPos + term.indexOf(termPart);
-				int termPartEndPos = termPartPos + termPart.length();
+            for (int i = 0; i < termParts.length; i++) {
+                String termPart = termParts[i];
+                int termPartPos = termPos + term.indexOf(termPart);
+                int termPartEndPos = termPartPos + termPart.length();
 
-				Token newToken = new Token(termPart, termPartPos, termPartEndPos);
-				newToken.setPositionIncrement(0); // in the same position
+                SimpleToken newToken = new SimpleToken(termPart, termPartPos, termPartEndPos, 0);
+                tokens.add(newToken);
+            }
+        }
+    }
 
-				tokens.add(newToken);
-			}
-		}
-	}
+    private void applyToken(SimpleToken token) {
+        termAtt.setEmpty();
+        termAtt.append(token.term);
+        posAtt.setPositionIncrement(token.posInc);
+        offsetAtt.setOffset(token.startOffset, token.endOffset);
+    }
 
-	private void applyToken(Token token) {
-		termAtt.setTermBuffer(token.termBuffer(), 0, token.termLength());
-		posAtt.setPositionIncrement(token.getPositionIncrement());
-		offsetAtt.setOffset(token.startOffset(), token.endOffset());
-	}
+    // Simple container replacing deprecated Token
+    private static class SimpleToken {
+        final String term;
+        final int startOffset;
+        final int endOffset;
+        final int posInc;
 
-	/**
-	 * Return original term together with the parts
-	 * 
-	 * @return returnOriginalTerm
-	 */
-	protected boolean returnOriginalTerm() {
-		return false;
-	}
+        SimpleToken(String term, int startOffset, int endOffset, int posInc) {
+            this.term = term;
+            this.startOffset = startOffset;
+            this.endOffset = endOffset;
+            this.posInc = posInc;
+        }
+    }
 
-	/**
-	 * Split term into an array of terms
-	 * 
-	 * @param term
-	 * @return split term
-	 */
-	public abstract String[] splitTerm(String term);
+    /**
+     * Return original term together with the parts
+     * 
+     * @return returnOriginalTerm
+     */
+    protected boolean returnOriginalTerm() {
+        return false;
+    }
+
+    /**
+     * Split term into an array of terms
+     * 
+     * @param term
+     * @return split term
+     */
+    public abstract String[] splitTerm(String term);
 }

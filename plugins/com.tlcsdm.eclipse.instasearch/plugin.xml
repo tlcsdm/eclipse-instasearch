@@ -1,38 +1,214 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.2"?>
 <plugin>
-   <extension point="org.eclipse.ui.bindings">
-      <key
-            commandId="com.tlcsdm.eclipse.instasearch.command"
-            contextId="org.eclipse.jdt.ui.javaEditorScope"
-            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-            sequence="M1+M3+O">
-      </key>
-   </extension>
-   <extension point="org.eclipse.ui.commands">
-      <command id="com.tlcsdm.eclipse.instasearch.command"
-               name="Generate Builder Pattern..."
-               description="Generate Builder Pattern code">
-      </command>
-   </extension>
-   
-   <extension point="org.eclipse.ui.handlers">
-   <handler
-			class="com.tlcsdm.eclipse.instasearch.handler.FillArgumentsHandler"
-			commandId="com.tlcsdm.eclipse.instasearch.command">
-   </handler>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            allowMultiple="false"
+            category="org.eclipse.ui"
+            class="com.tlcsdm.eclipse.instasearch.ui.InstaSearchView"
+            icon="icons/search_results.gif"
+            id="com.tlcsdm.eclipse.instasearch.ui.InstaSearchView"
+            name="InstaSearch"
+            restorable="true">
+      </view>
    </extension>
    <extension
-         id="com.tlcsdm.eclipse.instasearch.proposal"
-         name="Eclipse plug-in for quick code search"
-         point="org.eclipse.jdt.ui.javaCompletionProposalComputer">
-      <javaCompletionProposalComputer
-            activate="true"
-            categoryId="org.eclipse.jdt.ui.defaultProposalCategory"
-            class="com.tlcsdm.eclipse.instasearch.handler.FillArgumentsCompletionProposalComputer"
-            needsSortingAfterFiltering="false"
-            requiresUIThread="true">
-      </javaCompletionProposalComputer>
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.eclipse.jdt.ui.JavaPerspective">
+         <view
+               closeable="true"
+               id="com.tlcsdm.eclipse.instasearch.ui.InstaSearchView"
+               minimized="false"
+               moveable="true"
+               ratio="0.5"
+               relationship="stack"
+               relative="org.eclipse.ui.console.ConsoleView"
+               showTitle="true"
+               standalone="false"
+               visible="true">
+         </view>
+         <viewShortcut
+               id="com.tlcsdm.eclipse.instasearch.ui.InstaSearchView">
+         </viewShortcut>
+         <actionSet
+               id="com.tlcsdm.eclipse.instasearch.actionSet">
+         </actionSet>
+      </perspectiveExtension>
+   </extension>
+   <extension
+         point="org.eclipse.ui.viewActions">
+      <viewContribution
+            id="com.tlcsdm.eclipse.instasearch.viewContribution"
+            targetID="com.tlcsdm.eclipse.instasearch.ui.InstaSearchView">
+         <menu
+               id="pulldownMenu"
+               label="Pulldown Menu"
+               path="additions">
+         </menu>
+         <action
+               class="com.tlcsdm.eclipse.instasearch.actions.VisitHomePageActionDelegate"
+               id="com.tlcsdm.eclipse.instasearch.actions.VisitHomePageActionDelegate"
+               label="Website"
+               menubarPath="pulldown"
+               style="push"
+               tooltip="Visit Home Page of the Plugin">
+         </action>
+         <action
+               class="com.tlcsdm.eclipse.instasearch.actions.PreferencesAction"
+               id="com.tlcsdm.eclipse.instasearch.actions.PreferencesAction"
+               label="Preferences..."
+               menubarPath="pulldown"
+               style="push"
+               tooltip="Open Plugin&apos;s Preferences">
+         </action>
+         <action
+               class="com.tlcsdm.eclipse.instasearch.actions.DeleteIndexActionDelegate"
+               id="com.tlcsdm.eclipse.instasearch.actions.DeleteIndexActionDelegate"
+               label="Delete Index"
+               menubarPath="pulldown"
+               style="push"
+               tooltip="Delete the Search Index">
+         </action>
+         <action
+               class="com.tlcsdm.eclipse.instasearch.actions.OpenSearchDialog"
+               icon="icons/search.gif"
+               id="com.tlcsdm.eclipse.instasearch.actions.OpenSearchDialog"
+               label="Search Dialog"
+               menubarPath="pulldown"
+               style="push"
+               toolbarPath="additions"
+               tooltip="Open Search Dialog...">
+         </action>
+         <action
+               class="com.tlcsdm.eclipse.instasearch.actions.BuildIndexActionDelegate"
+               icon="icons/binary.gif"
+               id="com.tlcsdm.eclipse.instasearch.actions.BuildIndexActionDelegate"
+               label="(Re)Build Index"
+               menubarPath="pulldown"
+               style="push"
+               toolbarPath="additions"
+               tooltip="Build or Re-build the Search Index">
+         </action>
+         <action
+               class="com.tlcsdm.eclipse.instasearch.actions.CollapseAllActionDelegate"
+               icon="icons/collapseall.gif"
+               id="com.tlcsdm.eclipse.instasearch.actions.CollapseAllActionDelegate"
+               label="Collapse All"
+               style="push"
+               toolbarPath="additions">
+         </action>
+         <action
+               class="com.tlcsdm.eclipse.instasearch.actions.ExpandAllActionDelegate"
+               icon="icons/expandall.gif"
+               id="com.tlcsdm.eclipse.instasearch.actions.ExpandAllActionDelegate"
+               label="Expand All"
+               style="push"
+               toolbarPath="additions">
+         </action>
+         <action
+               class="com.tlcsdm.eclipse.instasearch.actions.IncrementalSearchActionDelegate"
+               id="com.tlcsdm.eclipse.instasearch.actions.IncrementalSearchActionDelegate"
+               label="Incremental Search"
+               menubarPath="pulldown"
+               state="true"
+               style="toggle"
+               tooltip="Incremental search while typing (Ctrl+J for next match)">
+         </action>
+      </viewContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.startup">
+      <startup
+            class="com.tlcsdm.eclipse.instasearch.InstaSearchStartup">
+      </startup>
+   </extension>
+   <extension
+         point="org.eclipse.ui.actionSets">
+      <actionSet
+            id="com.tlcsdm.eclipse.instasearch.actionSet"
+            label="InstaSearch"
+            visible="true">
+         <action
+               allowLabelUpdate="true"
+               class="com.tlcsdm.eclipse.instasearch.actions.ShowInstaSearchAction"
+               definitionId="com.tlcsdm.eclipse.instasearch.ui.ShowInstaSearch"
+               icon="icons/search_results.gif"
+               id="com.tlcsdm.eclipse.instasearch.actions.ShowInstaSearchAction"
+               label="InstaSearch..."
+               menubarPath="org.eclipse.search.menu/internalDialogGroup"
+               tooltip="Open InstaSearch View">
+         </action>
+         <menu
+               id="org.eclipse.search.menu"
+               label="%searchMenu.label"
+               path="navigate">
+            <groupMarker
+                  name="internalDialogGroup">
+            </groupMarker>
+            <groupMarker
+                  name="dialogGroup">
+            </groupMarker>
+            <separator
+                  name="fileSearchContextMenuActionsGroup">
+            </separator>
+            <separator
+                  name="contextMenuActionsGroup">
+            </separator>
+            <separator
+                  name="occurencesActionsGroup">
+            </separator>
+            <separator
+                  name="extraSearchGroup">
+            </separator>
+         </menu>
+      </actionSet>
+   </extension>
+   <extension
+         point="org.eclipse.search.searchPages">
+      <page
+            canSearchEnclosingProjects="true"
+            class="com.tlcsdm.eclipse.instasearch.ui.InstaSearchPage"
+            enabled="true"
+            extensions="*"
+            icon="icons/search_results.gif"
+            id="com.tlcsdm.eclipse.instasearch.ui.InstaSearchPage"
+            label="InstaSearch"
+            showScopeSection="true"
+            tabPosition="0">
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            description="Show InstaSearch"
+            id="com.tlcsdm.eclipse.instasearch.ui.ShowInstaSearch"
+            name="ShowInstaSearch">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="com.tlcsdm.eclipse.instasearch.ui.ShowInstaSearch"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M1+M2+M3+I">
+      </key>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            category="org.eclipse.search.preferences.SearchPreferencePage"
+            class="com.tlcsdm.eclipse.instasearch.prefs.InstaSearchPreferencePage"
+            id="com.tlcsdm.eclipse.instasearch.prefs.InstaSearchPreferencePage"
+            name="InstaSearch">
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer
+            class="com.tlcsdm.eclipse.instasearch.prefs.PreferenceInitializer">
+      </initializer>
    </extension>
 
 </plugin>

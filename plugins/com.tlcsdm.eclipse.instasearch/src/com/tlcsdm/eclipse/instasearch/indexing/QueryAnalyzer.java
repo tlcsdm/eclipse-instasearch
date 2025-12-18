@@ -47,7 +47,7 @@ public class QueryAnalyzer extends Analyzer {
 			result = new CamelCaseTokenizer(result); // CamelCaseIdentifiers
 
 			// result = new LowerCaseFilter(result);
-			result = new LengthFilter(result, minWordLength, MAX_WORD_LENGTH);
+			result = new LengthFilter(false, result, minWordLength, MAX_WORD_LENGTH);
 
 			return result;
 

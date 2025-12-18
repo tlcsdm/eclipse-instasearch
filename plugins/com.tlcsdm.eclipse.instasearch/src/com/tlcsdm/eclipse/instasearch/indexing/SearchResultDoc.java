@@ -64,7 +64,7 @@ public class SearchResultDoc {
 	}
 
 	public boolean isInJar() {
-		if (doc.getField(Field.JAR.toString()) == null)
+		if (doc.getFieldable(Field.JAR.toString()) == null)
 			return false;
 
 		String jarField = getFieldValue(Field.JAR);

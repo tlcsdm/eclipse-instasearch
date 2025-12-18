@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,16 +25,16 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
-import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.Field.TermVector;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TieredMergePolicy;
 import org.apache.lucene.search.Similarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
@@ -46,8 +47,6 @@ import org.eclipse.core.runtime.IPath;
  * Indexes documents of type IStorage
  */
 public class StorageIndexer {
-	/** Maximum number of terms indexed per one document */
-	private static final int MAX_TERMS_PER_DOC = 200000;
 	/** */
 	public static final String NO_VALUE = "<none>";
 	/** */
@@ -88,14 +87,18 @@ public class StorageIndexer {
 	 * @throws IOException
 	 */
 	public IndexWriter createIndexWriter(boolean create) throws IOException {
-		IndexWriter indexWriter = new IndexWriter(getIndexDir(), new IndexWriterConfig(Version.LUCENE_31, fileAnalyzer)
-				.setOpenMode(create ? OpenMode.CREATE : OpenMode.APPEND));
+		IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_30, fileAnalyzer);
+		// OpenMode
+		config.setOpenMode(create ? IndexWriterConfig.OpenMode.CREATE : IndexWriterConfig.OpenMode.APPEND);
+		// Similarity（原 indexWriter.setSimilarity）
+		config.setSimilarity(similarity);
+		// MergePolicy（替代 setMergeFactor）
+		TieredMergePolicy mergePolicy = new TieredMergePolicy();
+		mergePolicy.setSegmentsPerTier(2); // 类似 mergeFactor=2
+		mergePolicy.setMaxMergeAtOnce(2);
+		config.setMergePolicy(mergePolicy);
 
-		indexWriter.setMergeFactor(2); // use less resources (although slower)
-		indexWriter.setSimilarity(similarity);
-		indexWriter.setMaxFieldLength(MAX_TERMS_PER_DOC);
-
-		return indexWriter;
+		return new IndexWriter(getIndexDir(), config);
 	}
 
 	/**
@@ -142,7 +145,7 @@ public class StorageIndexer {
 				for (String file : dir.listAll()) {
 					if (dir.fileExists(file)) // still exits
 					{
-						dir.sync(file);
+						dir.sync(Collections.singleton(file));
 						dir.deleteFile(file);
 					}
 				}
@@ -167,7 +170,7 @@ public class StorageIndexer {
 			return;
 
 		IndexWriter w = createIndexWriter(false);
-		w.optimize();
+		w.forceMerge(1, true);
 		w.close();
 
 		changeListener.onIndexUpdate();
@@ -212,7 +215,6 @@ public class StorageIndexer {
 			ext = NO_VALUE;
 
 		Document doc = new Document();
-
 		doc.add(createLuceneField(Field.CONTENTS, isReader));
 		doc.add(createLuceneField(Field.FILE, fullPath.toString()));
 		doc.add(createLuceneField(Field.PROJ, projectName));
@@ -269,21 +271,30 @@ public class StorageIndexer {
 	protected void indexStorageWithRetry(final IndexWriter indexWriter, final IStorage storage,
 			final String projectName, final long modificationStamp, final String jar) throws Exception {
 		RetryingRunnable runnable = new RetryingRunnable() {
+			private boolean oomRetried = false;
+
+			@Override
 			public void run() throws Exception {
 				indexStorage(indexWriter, storage, projectName, modificationStamp, jar);
 			}
 
+			@Override
 			public boolean handleException(Throwable e) {
+
 				if (e instanceof OutOfMemoryError) {
-					if (indexWriter.getMaxFieldLength() > IndexWriter.DEFAULT_MAX_FIELD_LENGTH)
-						indexWriter.setMaxFieldLength(IndexWriter.DEFAULT_MAX_FIELD_LENGTH); // use less memory
-					else
-						return false;
-				} else if (e instanceof IOException) {
-					changeListener.onIndexReset(); // close searcher
+					if (!oomRetried) {
+						oomRetried = true;
+						return true; // retry once
+					}
+					return false; // give up
 				}
 
-				return true; // keep retrying
+				if (e instanceof IOException) {
+					changeListener.onIndexReset(); // close searcher
+					return true;
+				}
+
+				return false;
 			}
 		};
 
@@ -333,11 +344,11 @@ public class StorageIndexer {
 		Map<String, List<Integer>> terms = new HashMap<String, List<Integer>>();
 		TokenStream tokenStream = fileAnalyzer.tokenStream(Field.CONTENTS.toString(), new StringReader(text));
 
-		TermAttribute termAtt = (TermAttribute) tokenStream.addAttribute(TermAttribute.class);
+		CharTermAttribute termAtt = tokenStream.addAttribute(CharTermAttribute.class);
 		OffsetAttribute offsetAtt = (OffsetAttribute) tokenStream.addAttribute(OffsetAttribute.class);
 
 		while (tokenStream.incrementToken()) {
-			String termText = termAtt.term().toLowerCase(Locale.ENGLISH);// t.termText().toLowerCase(Locale.ENGLISH);
+			String termText = termAtt.toString().toLowerCase(Locale.ENGLISH);// get token text
 			int offset = offsetAtt.startOffset();
 
 			List<Integer> offsets = terms.get(termText);

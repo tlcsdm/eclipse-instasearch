@@ -4,7 +4,7 @@ Automatic-Module-Name: com.tlcsdm.eclipse.instasearch
 Bundle-Name: %pluginName
 Bundle-SymbolicName: com.tlcsdm.eclipse.instasearch;singleton:=true
 Bundle-Version: 1.0.0.qualifier
-Bundle-Activator: com.tlcsdm.eclipse.instasearch.Activator
+Bundle-Activator: com.tlcsdm.eclipse.instasearch.InstaSearchPlugin
 Bundle-Vendor: %providerName
 Require-Bundle: org.eclipse.ui,
  org.apache.lucene,

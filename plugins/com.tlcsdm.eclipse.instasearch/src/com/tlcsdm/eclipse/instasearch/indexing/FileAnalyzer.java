@@ -19,7 +19,8 @@ import org.apache.lucene.analysis.LengthFilter;
 import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.TermAttribute;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.util.Version;
 
 import com.tlcsdm.eclipse.instasearch.indexing.tokenizers.CamelCaseTokenizer;
 import com.tlcsdm.eclipse.instasearch.indexing.tokenizers.DotSplitTokenizer;
@@ -46,8 +47,8 @@ public class FileAnalyzer extends Analyzer {
 		result = new DotSplitTokenizer(result); // all.package.names, hyphen-separated-words
 		result = new CamelCaseTokenizer(result); // CamelCaseIdentifiers
 
-		result = new LengthFilter(result, minWordLength, 128);
-		result = new LowerCaseFilter(result);
+		result = new LengthFilter(false, result, minWordLength, 128);
+		result = new LowerCaseFilter(Version.LUCENE_30, result);
 
 		return result;
 	}
@@ -59,17 +60,18 @@ public class FileAnalyzer extends Analyzer {
 
 	// used when debugging
 	public static class SysoFilter extends TokenFilter {
-		private TermAttribute termAtt;
+		private CharTermAttribute termAtt;
 
 		public SysoFilter(TokenStream input) {
 			super(input);
-			termAtt = (TermAttribute) addAttribute(TermAttribute.class);
+			termAtt = addAttribute(CharTermAttribute.class);
 		}
 
 		@Override
 		public boolean incrementToken() throws IOException {
 			if (input.incrementToken()) {
-				System.out.println("TERM: " + termAtt.term());
+				// CharTermAttribute#toString() returns the current token text
+				System.out.println("TERM: " + termAtt.toString());
 				return true;
 			}
 

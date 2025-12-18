@@ -28,6 +28,7 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.ui.IWorkingSet;
 import org.eclipse.ui.IWorkingSetManager;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -128,7 +129,7 @@ public final class InstaSearchPlugin extends AbstractUIPlugin {
 	public static List<String> getWorkingSets() {
 		ArrayList<String> workingSets = new ArrayList<String>();
 
-		IWorkingSetManager wsManager = getDefault().getWorkbench().getWorkingSetManager();
+		IWorkingSetManager wsManager = PlatformUI.getWorkbench().getWorkingSetManager();
 		if (wsManager == null)
 			return workingSets;
 
@@ -151,7 +152,7 @@ public final class InstaSearchPlugin extends AbstractUIPlugin {
 
 		String emptyResults[] = new String[0];
 
-		IWorkingSetManager wsManager = getDefault().getWorkbench().getWorkingSetManager();
+		IWorkingSetManager wsManager = PlatformUI.getWorkbench().getWorkingSetManager();
 		if (wsManager == null)
 			return emptyResults;
 

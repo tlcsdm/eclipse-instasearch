@@ -138,7 +138,6 @@ public class InstaSearch {
 
 	public SearcherConfig getSearcherConfig() {
 		return new SearcherConfig() {
-			@SuppressWarnings("deprecation")
 			public Directory getIndexDir() throws IOException {
 				// InstaSearchPlugin.getIndexDirLocation() returns a File -> use toPath()
 				java.io.File idxDir = InstaSearchPlugin.getIndexDirLocation();

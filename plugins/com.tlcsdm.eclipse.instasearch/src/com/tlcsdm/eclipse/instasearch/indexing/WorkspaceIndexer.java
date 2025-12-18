@@ -96,7 +96,7 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 		indexContainers(indexWriter, root, monitor);
 
 		monitor.setTaskName("Optimizing Index");
-		indexWriter.optimize();
+		indexWriter.forceMerge(1, true);
 
 		indexWriter.close();
 		indexDirectory.close();

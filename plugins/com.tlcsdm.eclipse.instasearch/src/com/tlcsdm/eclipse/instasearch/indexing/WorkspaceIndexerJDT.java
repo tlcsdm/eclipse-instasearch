@@ -187,7 +187,7 @@ public class WorkspaceIndexerJDT extends WorkspaceIndexer {
 			monitor.setTaskName(
 					"Indexing JAR Source Attachements: " + jar.getElementName() + " - " + pkg.getElementName());
 
-			for (IClassFile classFile : pkg.getClassFiles()) {
+			for (IClassFile classFile : pkg.getAllClassFiles()) {
 				if (classFile.getElementName().contains("$"))
 					continue; // not type root
 
@@ -464,8 +464,9 @@ public class WorkspaceIndexerJDT extends WorkspaceIndexer {
 			return true;
 		}
 
-		@SuppressWarnings("rawtypes")
-		public Object getAdapter(Class adapter) {
+		@SuppressWarnings("unchecked")
+		@Override
+		public Object getAdapter(@SuppressWarnings("rawtypes") Class adapter) {
 			return classFile.getAdapter(adapter);
 		}
 
