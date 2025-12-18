@@ -35,7 +35,7 @@ Lucene [query syntax](http://lucene.apache.org/core/old_versioned_docs/versions/
    * `name:FOS`
 
 To exclude some folders from search indexing, mark them as *Derived* in the folder's properties.
-There are also useful [Eclipse Search Tips](https://github.com/ajermakovics/eclipse-instasearch/wiki/Eclipse-search-tips).
+There are also useful [Eclipse Search Tips](https://github.com/tlcsdm/eclipse-instasearch/wiki/Eclipse-search-tips).
 
 **Note**: Fuzzy search is started automatically if no exact matches are found
 
@@ -48,6 +48,9 @@ There are also useful [Eclipse Search Tips](https://github.com/ajermakovics/ecli
 * Opens and highlights matches in files
 * Searches JAR source attachments
 * Supports filtering by extension/project/working set
+
+## History
+Fork of [eclipse-instasearch](https://github.com/ajermakovics/eclipse-instasearch) on Github.
 
 ## Build
 

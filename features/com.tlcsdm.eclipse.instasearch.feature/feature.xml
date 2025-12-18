@@ -7,12 +7,12 @@
       plugin="com.tlcsdm.eclipse.instasearch">
 
    <description>
-      Eclipse plug-in for doing quick search in workspace files using
-a search engine. Shows search results instantly as you type.
+      Eclipse plug-in for doing quick search in workspace files using a search engine. Shows search results instantly as you type.
    </description>
 
    <copyright>
       Copyright (c) 2025 Tlcsdm. All rights reserved.
+      Copyright (C) 2014 Andrejs Jermakovics
    </copyright>
 
    <license url="https://www.eclipse.org/legal/epl-v20.html">
