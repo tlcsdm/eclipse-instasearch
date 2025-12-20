@@ -19,8 +19,8 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.ui.progress.IProgressConstants;
 
 import com.tlcsdm.eclipse.instasearch.InstaSearchPlugin;
-import com.tlcsdm.eclipse.instasearch.actions.ShowExceptionAction;
 import com.tlcsdm.eclipse.instasearch.indexing.WorkspaceIndexer;
+import com.tlcsdm.eclipse.instasearch.ui.ShowExceptionAction;
 
 public class IndexingJob extends WorkspaceJob {
 

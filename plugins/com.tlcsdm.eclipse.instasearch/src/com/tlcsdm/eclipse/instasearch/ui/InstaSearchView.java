@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Locale;
 
+import org.eclipse.core.commands.Command;
 import org.eclipse.core.runtime.ILogListener;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -61,12 +62,14 @@ import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IViewSite;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.commands.ICommandService;
+import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.part.ViewPart;
 
 import com.tlcsdm.eclipse.instasearch.InstaSearchPlugin;
-import com.tlcsdm.eclipse.instasearch.actions.BuildIndexActionDelegate;
-import com.tlcsdm.eclipse.instasearch.actions.ShowExceptionAction;
 import com.tlcsdm.eclipse.instasearch.indexing.Field;
 import com.tlcsdm.eclipse.instasearch.indexing.SearchQuery;
 import com.tlcsdm.eclipse.instasearch.indexing.SearchResultDoc;
@@ -392,7 +395,20 @@ public class InstaSearchView extends ViewPart
 		Action rebuildSearchIndex = new Action("Build or Re-build the Search Index") {
 			@Override
 			public void run() {
-				new BuildIndexActionDelegate().run(this);
+				IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+				if (window == null) {
+					return;
+				}
+				ICommandService commandService = window.getService(ICommandService.class);
+				IHandlerService handlerService = window.getService(IHandlerService.class);
+				Command command = commandService.getCommand("com.tlcsdm.eclipse.instasearch.commands.buildIndex");
+				if (command != null && command.isDefined()) {
+					try {
+						handlerService.executeCommand("com.tlcsdm.eclipse.instasearch.commands.buildIndex", null);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
 			}
 		};
 		manager.add(rebuildSearchIndex);

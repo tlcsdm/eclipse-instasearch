@@ -40,11 +40,11 @@ import org.osgi.framework.BundleEvent;
 import org.osgi.framework.SynchronousBundleListener;
 
 import com.tlcsdm.eclipse.instasearch.InstaSearchPlugin;
-import com.tlcsdm.eclipse.instasearch.actions.ShowExceptionAction;
 import com.tlcsdm.eclipse.instasearch.indexing.StorageIndexer.IndexChangeListener;
 import com.tlcsdm.eclipse.instasearch.indexing.WorkspaceIndexer;
 import com.tlcsdm.eclipse.instasearch.prefs.PreferenceConstants;
 import com.tlcsdm.eclipse.instasearch.ui.InstaSearchUI;
+import com.tlcsdm.eclipse.instasearch.ui.ShowExceptionAction;
 
 /**
  * Workspace job that periodically updates the index
