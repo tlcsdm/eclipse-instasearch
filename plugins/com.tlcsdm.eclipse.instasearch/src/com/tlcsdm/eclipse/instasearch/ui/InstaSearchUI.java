@@ -12,6 +12,8 @@
 package com.tlcsdm.eclipse.instasearch.ui;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 import org.eclipse.core.resources.IProject;
@@ -117,8 +119,8 @@ public class InstaSearchUI {
 		return false;
 	}
 
-	public static void showHomePage() throws MalformedURLException, PartInitException {
-		URL homePageUrl = new URL(InstaSearchPlugin.getHomePageLocation());
+	public static void showHomePage() throws MalformedURLException, PartInitException, URISyntaxException {
+		URL homePageUrl = new URI(InstaSearchPlugin.getHomePageLocation()).toURL();
 		PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser().openURL(homePageUrl);
 	}
 

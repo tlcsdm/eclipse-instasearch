@@ -30,3 +30,4 @@ Require-Bundle: org.eclipse.ui,
 Bundle-ActivationPolicy: lazy
 Bundle-Localization: plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-DocURL: https://github.com/tlcsdm/eclipse-instasearch
