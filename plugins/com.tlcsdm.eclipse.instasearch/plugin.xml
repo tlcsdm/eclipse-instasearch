@@ -15,7 +15,12 @@
 
    <extension point="org.eclipse.ui.perspectiveExtensions">
       <perspectiveExtension targetID="org.eclipse.jdt.ui.JavaPerspective">
-         <view id="com.tlcsdm.eclipse.instasearch.ui.InstaSearchView" ratio="0.5" relationship="stack" relative="org.eclipse.ui.console.ConsoleView" />
+         <view
+               id="com.tlcsdm.eclipse.instasearch.ui.InstaSearchView"
+               ratio="0.5"
+               relationship="stack"
+               relative="org.eclipse.ui.console.ConsoleView"
+               visible="true"/>
          <viewShortcut id="com.tlcsdm.eclipse.instasearch.ui.InstaSearchView" />
       </perspectiveExtension>
    </extension>
@@ -93,19 +98,46 @@
 
    <extension point="org.eclipse.ui.menus">
       <menuContribution locationURI="menu:com.tlcsdm.eclipse.instasearch.ui.InstaSearchView?path=additions">
-         <command commandId="com.tlcsdm.eclipse.instasearch.commands.visitHomePage" label="Website" style="push"/>
-         <command commandId="com.tlcsdm.eclipse.instasearch.commands.preferences" label="Preferences..." style="push"/>
-         <command commandId="com.tlcsdm.eclipse.instasearch.commands.deleteIndex" label="Delete Index" style="push"/>
+         <command
+               commandId="com.tlcsdm.eclipse.instasearch.commands.visitHomePage"
+               label="Website"
+               style="push"
+               tooltip="Visit Home Page of the Plugin"/>
+         <command
+               commandId="com.tlcsdm.eclipse.instasearch.commands.preferences"
+               label="Preferences..."
+               style="push"
+               tooltip="Open Pluginin Preferences"/>
+         <command
+               commandId="com.tlcsdm.eclipse.instasearch.commands.deleteIndex"
+               label="Delete Index"
+               style="push"
+               tooltip="Delete the Search Index"/>
          <separator name="com.tlcsdm.eclipse.instasearch.separator1" visible="true"/>
-         <command commandId="com.tlcsdm.eclipse.instasearch.commands.openSearchDialog" label="Search Dialog" style="push"/>
-         <command commandId="com.tlcsdm.eclipse.instasearch.commands.buildIndex" label="(Re)Build Index" style="push"/>
+         <command
+               commandId="com.tlcsdm.eclipse.instasearch.commands.openSearchDialog"
+               label="Search Dialog"
+               style="push"
+               tooltip="Open Search Dialog..."/>
+         <command
+               commandId="com.tlcsdm.eclipse.instasearch.commands.buildIndex"
+               label="(Re)Build Index"
+               style="push"
+               tooltip="Build or Re-build the Search Index"/>
          <command commandId="com.tlcsdm.eclipse.instasearch.commands.collapseAll" label="Collapse All" style="push"/>
          <command commandId="com.tlcsdm.eclipse.instasearch.commands.expandAll" label="Expand All" style="push"/>
-         <command commandId="com.tlcsdm.eclipse.instasearch.commands.toggleIncremental" label="Incremental Search" style="toggle"/>
+         <command
+               commandId="com.tlcsdm.eclipse.instasearch.commands.toggleIncremental"
+               label="Incremental Search"
+               style="toggle"
+               tooltip="Incremental search while typing (Ctrl+J for next match)"/>
       </menuContribution>
 
       <menuContribution locationURI="toolbar:com.tlcsdm.eclipse.instasearch.ui.InstaSearchView?path=additions">
-         <command commandId="com.tlcsdm.eclipse.instasearch.commands.openSearchDialog" label="Search Dialog">
+         <command
+               commandId="com.tlcsdm.eclipse.instasearch.commands.openSearchDialog"
+               label="Search Dialog"
+               tooltip="Open Search Dialog...">
             <visibleWhen>
                <with variable="activeWorkbenchWindow">
                   <not>
@@ -114,13 +146,19 @@
                </with>
             </visibleWhen>
          </command>
-         <command commandId="com.tlcsdm.eclipse.instasearch.commands.buildIndex" label="Build/Rebuild" />
+         <command
+               commandId="com.tlcsdm.eclipse.instasearch.commands.buildIndex"
+               label="Build/Rebuild"
+               tooltip="Build or Re-build the Search Index"/>
          <command commandId="com.tlcsdm.eclipse.instasearch.commands.expandAll" label="Expand All" />
          <command commandId="com.tlcsdm.eclipse.instasearch.commands.collapseAll" label="Collapse All" />
       </menuContribution>
 
       <menuContribution locationURI="menu:org.eclipse.search.menu">
-         <command commandId="com.tlcsdm.eclipse.instasearch.commands.showInstaSearch" label="InstaSearch..." />
+         <command
+               commandId="com.tlcsdm.eclipse.instasearch.commands.showInstaSearch"
+               label="InstaSearch..."
+               tooltip="Open InstaSearch View"/>
       </menuContribution>
    </extension>
 
