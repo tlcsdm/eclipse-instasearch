@@ -44,7 +44,6 @@ class ResultLabelProvider extends LabelProvider implements IStyledLabelProvider,
 	private static final String IMG_OBJ_TEXT_SEARCH_LINE = "org.eclipse.search.ui.line_match";
 	private static final String MORE_RESULTS_LABEL = "More...";
 	private static final String FIND_SIMILAR_LABEL = "Find similar...";
-	private static final String DOWN_ARROW_IMG_KEY = "down_arrow";
 
 	private ImageRegistry imageRegistry = new ImageRegistry();
 	private Styler highlightStyle;
@@ -66,8 +65,6 @@ class ResultLabelProvider extends LabelProvider implements IStyledLabelProvider,
 		this.highlightStyle = StyledString.createColorRegistryStyler(null, HIGHLIGHT_COLOR_NAME);
 		this.contentProvider = contentProvider;
 		this.matchImage = InstaSearchUI.getSharedImage(IMG_OBJ_TEXT_SEARCH_LINE);
-
-		imageRegistry.put(DOWN_ARROW_IMG_KEY, InstaSearchPlugin.getImageDescriptor(DOWN_ARROW_IMG_KEY));
 
 		this.showMatchCount = InstaSearchPlugin.getBoolPref(PreferenceConstants.P_SHOW_MATCH_COUNT);
 		this.showFullPath = InstaSearchPlugin.getBoolPref(PreferenceConstants.P_SHOW_FULL_PATH);
@@ -211,7 +208,7 @@ class ResultLabelProvider extends LabelProvider implements IStyledLabelProvider,
 			else if (element instanceof Exception)
 				return InstaSearchUI.getSharedImage(ISharedImages.IMG_OBJS_WARN_TSK);
 			else if (element instanceof SearchQuery)
-				return imageRegistry.get(DOWN_ARROW_IMG_KEY);
+				return InstaSearchUI.getSharedImage(ISharedImages.IMG_OBJS_INFO_TSK);
 
 		} catch (Exception e) {
 			InstaSearchPlugin.log(e);
