@@ -15,7 +15,7 @@ import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.ui.IStartup;
 import org.eclipse.ui.PlatformUI;
 
-import com.tlcsdm.eclipse.instasearch.actions.ShowInstaSearchAction;
+import com.tlcsdm.eclipse.instasearch.handlers.ShowInstaSearchHandler;
 
 /**
  * This class forces the plugin to be started at eclipse startup (when this
@@ -31,7 +31,7 @@ public class InstaSearchStartup implements IStartup {
 			prefs.setValue("shownView", true); // do not show anymore on startup
 
 			// Show view the first time after installation
-			PlatformUI.getWorkbench().getDisplay().asyncExec(new ShowInstaSearchAction());
+			PlatformUI.getWorkbench().getDisplay().asyncExec(new ShowInstaSearchHandler());
 		}
 	}
 
