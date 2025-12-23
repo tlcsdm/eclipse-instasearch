@@ -70,7 +70,7 @@ mvn clean org.eclipse.tycho:tycho-versions-plugin:set-version -DnewVersion=2.0.0
 
 ## Install
 
-1. Add `https://raw.githubusercontent.com/tlcsdm/eclipse-instasearch/master/update_site/` as the upgrade location in Eclipse.
+1. Add `https://raw.githubusercontent.com/tlcsdm/eclipse-instasearch/update_site/` as the upgrade location in Eclipse.
 2. Download from [Jenkins](https://jenkins.tlcsdm.com/job/eclipse-plugin/job/eclipse-instasearch)
 3. <table style="border: none;">
   <tbody>

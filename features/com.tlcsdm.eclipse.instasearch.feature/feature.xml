@@ -296,8 +296,8 @@ version(s), and exceptions or additional permissions here}.&quot;
    </license>
 
    <url>
-      <update label="%updateSiteName" url="https://raw.githubusercontent.com/tlcsdm/eclipse-instasearch/master/update_site/"/>
-      <discovery label="Eclipse plug-in for quick code search Update Site" url="https://raw.githubusercontent.com/tlcsdm/eclipse-instasearch/master/update_site/"/>
+      <update label="%updateSiteName" url="https://raw.githubusercontent.com/tlcsdm/eclipse-instasearch/update_site/"/>
+      <discovery label="Eclipse plug-in for quick code search Update Site" url="https://raw.githubusercontent.com/tlcsdm/eclipse-instasearch/update_site/"/>
    </url>
 
    <requires>
