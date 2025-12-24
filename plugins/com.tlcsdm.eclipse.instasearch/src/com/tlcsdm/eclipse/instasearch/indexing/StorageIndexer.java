@@ -31,6 +31,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexFormatTooOldException;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -136,11 +137,34 @@ public class StorageIndexer {
 			IndexReader reader = DirectoryReader.open(getIndexDir());
 			reader.close();
 
+		} catch (IndexFormatTooOldException oldIndexException) {
+			// Old Lucene 2.x/3.x index format is not compatible with Lucene 9.x
+			// Delete old index files so a new one can be created
+			deleteOldIndexFiles();
+			return false;
 		} catch (IOException readingException) {
 			return false;
 		}
 
 		return true;
+	}
+
+	/**
+	 * Delete old index files when format is incompatible
+	 */
+	private void deleteOldIndexFiles() {
+		try {
+			Directory dir = getIndexDir();
+			for (String file : dir.listAll()) {
+				try {
+					dir.deleteFile(file);
+				} catch (IOException ignored) {
+					// Best effort deletion
+				}
+			}
+		} catch (IOException ignored) {
+			// Best effort deletion
+		}
 	}
 
 	/**

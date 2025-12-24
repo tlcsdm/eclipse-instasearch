@@ -25,6 +25,7 @@ import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexFormatTooOldException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
@@ -241,11 +242,36 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	 */
 	private IndexSearcher getIndexSearcher() throws IOException {
 		if (indexSearcher == null) {
-			directoryReader = DirectoryReader.open(getIndexDir());
-			indexSearcher = new IndexSearcher(directoryReader);
+			try {
+				directoryReader = DirectoryReader.open(getIndexDir());
+				indexSearcher = new IndexSearcher(directoryReader);
+			} catch (IndexFormatTooOldException e) {
+				// Old Lucene 2.x/3.x index format is not compatible with Lucene 9.x
+				// Delete the old index files so a new index can be created
+				deleteOldIndexFiles();
+				throw new IOException("Index format is too old and has been deleted. Please rebuild the index.", e);
+			}
 		}
 
 		return indexSearcher;
+	}
+
+	/**
+	 * Delete old index files when format is incompatible
+	 */
+	private void deleteOldIndexFiles() {
+		try {
+			Directory dir = getIndexDir();
+			for (String file : dir.listAll()) {
+				try {
+					dir.deleteFile(file);
+				} catch (IOException ignored) {
+					// Best effort deletion
+				}
+			}
+		} catch (IOException ignored) {
+			// Best effort deletion
+		}
 	}
 
 	/**
