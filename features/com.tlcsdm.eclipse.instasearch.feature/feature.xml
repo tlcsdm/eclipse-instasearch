@@ -305,7 +305,6 @@ version(s), and exceptions or additional permissions here}.&quot;
       <import plugin="org.eclipse.ui" version="3.5.0" match="greaterOrEqual"/>
       <import plugin="org.apache.lucene" version="2.9.1" match="greaterOrEqual"/>
       <import plugin="org.apache.lucene.analysis" version="2.9.1" match="greaterOrEqual"/>
-      <import plugin="org.apache.commons.lang3"/>
       <import plugin="org.eclipse.ui.ide"/>
       <import plugin="org.eclipse.ui.editors"/>
       <import plugin="org.eclipse.ui.workbench.texteditor"/>
