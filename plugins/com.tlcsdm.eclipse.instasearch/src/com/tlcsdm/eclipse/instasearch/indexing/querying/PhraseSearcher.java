@@ -35,10 +35,10 @@ public class PhraseSearcher extends QueryVisitor {
 		phraseBuilder.setSlop(DEFAULT_SLOP);
 
 		for (BooleanClause clause : boolQuery.clauses()) {
-			if (clause.isProhibited() || !clause.isRequired() || !(clause.getQuery() instanceof TermQuery))
+			if (clause.isProhibited() || !clause.isRequired() || !(clause.query() instanceof TermQuery))
 				return super.visit(boolQuery); // only consider required terms
 
-			TermQuery tq = (TermQuery) clause.getQuery();
+			TermQuery tq = (TermQuery) clause.query();
 
 			Field field = Field.getByName(tq.getTerm().field());
 			if (field != Field.CONTENTS)
