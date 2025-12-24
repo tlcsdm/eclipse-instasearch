@@ -105,37 +105,35 @@ public class SearchResultDoc {
 	 * @throws IOException
 	 */
 	public double getTermScore(String term) throws IOException {
-		DirectoryReader reader = DirectoryReader.open(indexDir);
-		Terms terms = reader.termVectors().get(docId, Field.CONTENTS.toString());
-		
-		if (terms == null) {
-			reader.close();
-			return 0;
+		try (DirectoryReader reader = DirectoryReader.open(indexDir)) {
+			Terms terms = reader.termVectors().get(docId, Field.CONTENTS.toString());
+			
+			if (terms == null) {
+				return 0;
+			}
+			
+			TermsEnum termsEnum = terms.iterator();
+			BytesRef termBytes = new BytesRef(term);
+			
+			if (!termsEnum.seekExact(termBytes)) {
+				return 0;
+			}
+			
+			// Get term frequency from postings
+			int termFreq = 0;
+			PostingsEnum postings = termsEnum.postings(null, PostingsEnum.FREQS);
+			if (postings != null && postings.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+				termFreq = postings.freq();
+			}
+			
+			int numDocs = reader.numDocs();
+			int docFreq = reader.docFreq(new Term(Field.CONTENTS.toString(), term));
+			
+			float tf = (float) Math.sqrt(termFreq);
+			float idf = (float) (Math.log(numDocs / (double) (docFreq + 1)) + 1.0);
+			
+			return tf * idf;
 		}
-		
-		TermsEnum termsEnum = terms.iterator();
-		BytesRef termBytes = new BytesRef(term);
-		
-		if (!termsEnum.seekExact(termBytes)) {
-			reader.close();
-			return 0;
-		}
-		
-		// Get term frequency from postings
-		int termFreq = 0;
-		PostingsEnum postings = termsEnum.postings(null, PostingsEnum.FREQS);
-		if (postings != null && postings.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
-			termFreq = postings.freq();
-		}
-		
-		int numDocs = reader.numDocs();
-		int docFreq = reader.docFreq(new Term(Field.CONTENTS.toString(), term));
-		
-		float tf = (float) Math.sqrt(termFreq);
-		float idf = (float) (Math.log(numDocs / (double) (docFreq + 1)) + 1.0);
-		
-		reader.close();
-		return tf * idf;
 	}
 
 	public IFile getFile() {

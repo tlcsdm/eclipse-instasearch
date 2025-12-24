@@ -54,12 +54,8 @@ public class PhraseSearcher extends QueryVisitor {
 		builder.add(phraseQuery, Occur.SHOULD);
 		builder.add(new BoostQuery(boolQuery, 0.5f), Occur.SHOULD);
 
-		Query resultQuery = builder.build();
-		// BooleanQuery.Builder.build() always returns BooleanQuery when clauses are added
-		if (resultQuery instanceof BooleanQuery) {
-			return (BooleanQuery) resultQuery;
-		}
-		return boolQuery;
+		// BooleanQuery.Builder.build() returns BooleanQuery when clauses have been added
+		return builder.build();
 	}
 
 }

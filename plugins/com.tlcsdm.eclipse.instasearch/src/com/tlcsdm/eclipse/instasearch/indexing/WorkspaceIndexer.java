@@ -421,8 +421,12 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 	}
 
 	/**
+	 * Delete all documents belonging to a project from the index.
+	 * 
 	 * @param project
-	 * @return deletedCount
+	 * @return 1 if deletion was attempted, 0 otherwise. Note: In Lucene 9.x,
+	 *         deleteDocuments() returns a sequence number, not the actual count
+	 *         of deleted documents.
 	 * @throws Exception
 	 */
 	public int deleteProject(IProject project) throws Exception {
@@ -434,6 +438,7 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 
 		writer.close();
 
+		// Return 1 if deletion was successful (seqNum > 0), otherwise 0
 		return seqNum > 0 ? 1 : 0;
 	}
 

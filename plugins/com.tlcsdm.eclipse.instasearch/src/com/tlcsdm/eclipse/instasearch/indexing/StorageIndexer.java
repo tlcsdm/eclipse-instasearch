@@ -71,8 +71,16 @@ public class StorageIndexer {
 	private void checkLock() throws IOException {
 		Directory indexDir = getIndexDir();
 
-		if (IndexWriter.isLocked(indexDir)) // should not be locked at startup, unlock
-			indexDir.obtainLock(IndexWriter.WRITE_LOCK_NAME).close();
+		// In Lucene 9.x, IndexWriter.unlock() was removed.
+		// If the index is locked at startup (stale lock from crash), 
+		// we try to obtain and immediately release the lock to clear it.
+		if (IndexWriter.isLocked(indexDir)) {
+			try {
+				indexDir.obtainLock(IndexWriter.WRITE_LOCK_NAME).close();
+			} catch (IOException e) {
+				// Lock cannot be obtained, may need to recreate index
+			}
+		}
 	}
 
 	public Directory getIndexDir() throws IOException {

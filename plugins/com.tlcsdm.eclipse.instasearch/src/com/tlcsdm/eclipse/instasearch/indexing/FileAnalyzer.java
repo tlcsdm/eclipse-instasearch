@@ -55,8 +55,17 @@ public class FileAnalyzer extends Analyzer {
 		return new TokenStreamComponents(source, result);
 	}
 
+	/**
+	 * Create a token stream for the given reader.
+	 * This is used when analyzing file contents.
+	 * 
+	 * @param reader the input reader
+	 * @return TokenStream
+	 */
 	public TokenStream tokenStream(Reader reader) {
-		return createComponents("", reader).getTokenStream();
+		// Use Field.CONTENTS as the default field name since this analyzer
+		// is primarily used for file content indexing
+		return createComponents(Field.CONTENTS.toString(), reader).getTokenStream();
 	}
 
 	@Override
