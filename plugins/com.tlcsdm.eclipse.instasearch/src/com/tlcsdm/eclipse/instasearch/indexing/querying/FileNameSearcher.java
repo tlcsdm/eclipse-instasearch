@@ -14,6 +14,7 @@ package com.tlcsdm.eclipse.instasearch.indexing.querying;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 
@@ -40,13 +41,12 @@ public class FileNameSearcher extends QueryVisitor {
 			Term term = termQuery.getTerm();
 			Term nameTerm = Field.NAME.createTerm(term.text());
 			TermQuery nameQuery = new TermQuery(nameTerm);
-			nameQuery.setBoost(termQuery.getBoost() * 2f);
 
-			BooleanQuery boolQuery = new BooleanQuery();
-			boolQuery.add(nameQuery, Occur.SHOULD);
-			boolQuery.add(termQuery, Occur.SHOULD);
+			BooleanQuery.Builder builder = new BooleanQuery.Builder();
+			builder.add(new BoostQuery(nameQuery, 2f), Occur.SHOULD);
+			builder.add(termQuery, Occur.SHOULD);
 
-			return boolQuery;
+			return builder.build();
 		}
 
 		return termQuery;

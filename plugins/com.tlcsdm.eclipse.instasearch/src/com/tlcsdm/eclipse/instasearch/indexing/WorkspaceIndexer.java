@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
@@ -77,7 +77,7 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 
 	@Override
 	public Directory getIndexDir() throws IOException {
-		return FSDirectory.open(getIndexDirLocation()); // FSDirectory.getDirectory(getIndexDirLocation(), false);
+		return FSDirectory.open(getIndexDirLocation().toPath());
 	}
 
 	/**
@@ -89,7 +89,7 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 		getIndexChangeListener().onIndexReset();
 
 		deleteIndex();
-		Directory indexDirectory = FSDirectory.open(getIndexDirLocation());
+		Directory indexDirectory = FSDirectory.open(getIndexDirLocation().toPath());
 
 		IndexWriter indexWriter = createIndexWriter(true);
 
@@ -146,7 +146,7 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 
 	@Override
 	public boolean isIndexed() throws IOException {
-		return IndexReader.indexExists(getIndexDir()) && super.isIndexed();
+		return DirectoryReader.indexExists(getIndexDir()) && super.isIndexed();
 	}
 
 	private static List<Pattern> getExcludedDirsRegExes() {
@@ -287,7 +287,7 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 		if (!isIndexed())
 			return;
 
-		IndexReader reader = IndexReader.open(getIndexDir(), false);
+		DirectoryReader reader = DirectoryReader.open(getIndexDir());
 		deleteFolder(reader, folder);
 		reader.close();
 
@@ -402,18 +402,22 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 	 * @throws IOException
 	 * 
 	 */
-	private void deleteFolder(IndexReader reader, IContainer container) throws Exception {
+	private void deleteFolder(DirectoryReader reader, IContainer container) throws Exception {
 
 		IndexSearcher searcher = new IndexSearcher(reader);
 		String path = container.getFullPath().addTrailingSeparator().toString();
 		TopDocs topDocs = searcher.search(new PrefixQuery(Field.FILE.createTerm(path)), reader.numDocs());
 
+		// Use IndexWriter to delete documents
+		IndexWriter writer = createIndexWriter(false);
 		for (ScoreDoc doc : topDocs.scoreDocs) {
 			int docNum = doc.doc;
-			reader.deleteDocument(docNum);
+			String filePath = reader.storedFields().document(docNum).get(Field.FILE.toString());
+			if (filePath != null) {
+				writer.deleteDocuments(Field.FILE.createTerm(filePath));
+			}
 		}
-
-		searcher.close();
+		writer.close();
 	}
 
 	/**
@@ -422,15 +426,15 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 	 * @throws Exception
 	 */
 	public int deleteProject(IProject project) throws Exception {
-		IndexReader reader = IndexReader.open(getIndexDir(), false);
+		IndexWriter writer = createIndexWriter(false);
 		String filePath = project.getFullPath().toString();
 
 		Term term = Field.PROJ.createTerm(filePath);
-		int deletedCount = reader.deleteDocuments(term);
+		long seqNum = writer.deleteDocuments(term);
 
-		reader.close();
+		writer.close();
 
-		return deletedCount;
+		return seqNum > 0 ? 1 : 0;
 	}
 
 	public boolean isConflicting(ISchedulingRule rule) {

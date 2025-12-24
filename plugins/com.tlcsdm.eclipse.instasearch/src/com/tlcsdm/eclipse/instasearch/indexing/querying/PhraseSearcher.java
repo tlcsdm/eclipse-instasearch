@@ -14,6 +14,7 @@ package com.tlcsdm.eclipse.instasearch.indexing.querying;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.TermQuery;
 
@@ -30,9 +31,10 @@ public class PhraseSearcher extends QueryVisitor {
 
 	@Override
 	public BooleanQuery visit(BooleanQuery boolQuery) {
-		PhraseQuery phraseQuery = new PhraseQuery();
+		PhraseQuery.Builder phraseBuilder = new PhraseQuery.Builder();
+		phraseBuilder.setSlop(DEFAULT_SLOP);
 
-		for (BooleanClause clause : boolQuery.getClauses()) {
+		for (BooleanClause clause : boolQuery.clauses()) {
 			if (clause.isProhibited() || !clause.isRequired() || !(clause.getQuery() instanceof TermQuery))
 				return super.visit(boolQuery); // only consider required terms
 
@@ -42,20 +44,16 @@ public class PhraseSearcher extends QueryVisitor {
 			if (field != Field.CONTENTS)
 				continue;
 
-			phraseQuery.add(tq.getTerm());
+			phraseBuilder.add(tq.getTerm());
 		}
 
-		phraseQuery.setSlop(DEFAULT_SLOP);
+		PhraseQuery phraseQuery = phraseBuilder.build();
 
-		BooleanQuery bq = new BooleanQuery();
-		bq.add(phraseQuery, Occur.SHOULD);
-		bq.add(boolQuery, Occur.SHOULD);
-		bq.setBoost(boolQuery.getBoost());
+		BooleanQuery.Builder builder = new BooleanQuery.Builder();
+		builder.add(phraseQuery, Occur.SHOULD);
+		builder.add(new BoostQuery(boolQuery, 0.5f), Occur.SHOULD);
 
-		phraseQuery.setBoost(boolQuery.getBoost());
-		boolQuery.setBoost(phraseQuery.getBoost() * 0.5f);
-
-		return bq;
+		return (BooleanQuery) builder.build();
 	}
 
 }

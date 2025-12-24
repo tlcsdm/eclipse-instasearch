@@ -22,6 +22,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
+import org.apache.lucene.util.BytesRef;
 
 import com.tlcsdm.eclipse.instasearch.indexing.Field;
 
@@ -109,10 +110,8 @@ public class ModifiedTimeConverter extends QueryVisitor {
 		}
 
 		String field = Field.MODIFIED.name().toLowerCase(Locale.ENGLISH);
-		// NumericRangeQuery rangeQuery = NumericRangeQuery.newLongRange(field, start,
-		// end, true, true);
 
-		return new TermRangeQuery(field, "" + start, "" + end, true, true);
+		return new TermRangeQuery(field, new BytesRef(Long.toString(start)), new BytesRef(Long.toString(end)), true, true);
 	}
 
 	private static Interval getIntervalByName(String intervalName) {

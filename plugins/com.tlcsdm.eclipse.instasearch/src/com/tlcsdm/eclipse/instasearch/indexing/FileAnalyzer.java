@@ -15,12 +15,11 @@ import java.io.IOException;
 import java.io.Reader;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.LengthFilter;
-import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.core.LowerCaseFilter;
+import org.apache.lucene.analysis.miscellaneous.LengthFilter;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.lucene.util.Version;
 
 import com.tlcsdm.eclipse.instasearch.indexing.tokenizers.CamelCaseTokenizer;
 import com.tlcsdm.eclipse.instasearch.indexing.tokenizers.DotSplitTokenizer;
@@ -37,20 +36,27 @@ public class FileAnalyzer extends Analyzer {
 		this.minWordLength = minWordLength;
 	}
 
-	public TokenStream tokenStream(Reader reader) {
+	@Override
+	protected TokenStreamComponents createComponents(String fieldName) {
+		return createComponents(fieldName, null);
+	}
 
-		TokenStream result = new StandardTokenizer(reader); // splits at ". ", etc.
+	protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
+		StandardTokenizer source = new StandardTokenizer(reader); // splits at ". ", etc.
 
-		// result = new SysoFilter(result);
-
+		TokenStream result = source;
 		result = new WordSplitTokenizer(result); // non-alphanumerics
 		result = new DotSplitTokenizer(result); // all.package.names, hyphen-separated-words
 		result = new CamelCaseTokenizer(result); // CamelCaseIdentifiers
 
-		result = new LengthFilter(false, result, minWordLength, 128);
-		result = new LowerCaseFilter(Version.LUCENE_30, result);
+		result = new LengthFilter(result, minWordLength, 128);
+		result = new LowerCaseFilter(result);
 
-		return result;
+		return new TokenStreamComponents(source, result);
+	}
+
+	public TokenStream tokenStream(Reader reader) {
+		return createComponents("", reader).getTokenStream();
 	}
 
 	@Override

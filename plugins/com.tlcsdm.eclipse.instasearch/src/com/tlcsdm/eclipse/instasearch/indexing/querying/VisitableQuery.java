@@ -13,7 +13,7 @@ package com.tlcsdm.eclipse.instasearch.indexing.querying;
 
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.FilteredQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
@@ -62,33 +62,29 @@ public class VisitableQuery {
 
 			Query newQuery = queryVisitor.visit(termQuery, field);
 
-			newQuery.setBoost(query.getBoost());
 			returnQuery = newQuery;
 
 		} else if (query instanceof BooleanQuery) {
 			BooleanQuery boolQuery = (BooleanQuery) query;
 			BooleanQuery newBoolQuery = queryVisitor.visit(boolQuery);
 
-			for (BooleanClause boolClause : boolQuery.getClauses()) {
+			BooleanQuery.Builder builder = new BooleanQuery.Builder();
+			builder.setMinimumNumberShouldMatch(boolQuery.getMinimumNumberShouldMatch());
+
+			for (BooleanClause boolClause : boolQuery.clauses()) {
 				if (!queryVisitor.visit(boolClause))
 					continue;
 				Query newQuery = accept(boolClause.getQuery(), queryVisitor);
-				boolClause.setQuery(newQuery);
+				builder.add(newQuery, boolClause.getOccur());
 			}
 
-			newBoolQuery.setBoost(boolQuery.getBoost());
-			newBoolQuery.setMinimumNumberShouldMatch(boolQuery.getMinimumNumberShouldMatch());
+			returnQuery = builder.build();
+		} else if (query instanceof BoostQuery) {
+			BoostQuery bq = (BoostQuery) query;
+			Query newQuery = accept(bq.getQuery(), queryVisitor);
 
-			returnQuery = newBoolQuery;
-		} else if (query instanceof FilteredQuery) {
-			FilteredQuery fq = (FilteredQuery) query;
-			Query newQuery = accept(fq.getQuery(), queryVisitor);
-
-			if (newQuery != fq.getQuery()) {
-				FilteredQuery newFq = new FilteredQuery(fq.getQuery(), fq.getFilter());
-				newFq.setBoost(fq.getBoost());
-
-				returnQuery = newFq;
+			if (newQuery != bq.getQuery()) {
+				returnQuery = new BoostQuery(newQuery, bq.getBoost());
 			}
 		} else if (query instanceof PhraseQuery) {
 			PhraseQuery phraseQuery = (PhraseQuery) query;
@@ -101,7 +97,6 @@ public class VisitableQuery {
 
 			Query newQuery = queryVisitor.visit(wildcardQuery, field);
 
-			newQuery.setBoost(query.getBoost());
 			returnQuery = newQuery;
 
 		} else if (query instanceof PrefixQuery) {
@@ -110,7 +105,6 @@ public class VisitableQuery {
 
 			Query newQuery = queryVisitor.visit(prefixQuery, field);
 
-			newQuery.setBoost(query.getBoost());
 			returnQuery = newQuery;
 		} else {
 			returnQuery = queryVisitor.visitQuery(query);
