@@ -29,15 +29,10 @@ import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
  */
 public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer implements StandardTokenizerConstants {
 
-	/** Constructs a tokenizer for this Reader. */
-	public StandardTokenizer(java.io.Reader reader) {
+	/** No-argument constructor for use with Analyzer.createComponents(). */
+	public StandardTokenizer() {
 		super();
-		if (reader != null) {
-			this.input = reader;
-			token_source = new StandardTokenizerTokenManager(new FastCharStream(reader));
-		} else {
-			token_source = null;
-		}
+		token_source = null;
 		token = new Token();
 		jj_ntk = -1;
 		jj_gen = 0;

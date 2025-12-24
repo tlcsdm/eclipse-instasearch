@@ -473,7 +473,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	private Query parserSearchString(String searchString, Analyzer analyzer) throws ParseException {
 		QueryParser queryParser = new QueryParser(Field.CONTENTS.toString(), analyzer);
 		queryParser.setDefaultOperator(Operator.AND); // all fields required
-		queryParser.setLowercaseExpandedTerms(false);
+		// In Lucene 9.x, setLowercaseExpandedTerms was removed - expanded terms are now always lowercased
 		queryParser.setPhraseSlop(DEFAULT_PHRASE_SLOP);
 
 		/*

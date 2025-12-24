@@ -12,7 +12,6 @@
 package com.tlcsdm.eclipse.instasearch.indexing;
 
 import java.io.IOException;
-import java.io.Reader;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenFilter;
@@ -38,11 +37,7 @@ public class FileAnalyzer extends Analyzer {
 
 	@Override
 	protected TokenStreamComponents createComponents(String fieldName) {
-		return createComponents(fieldName, null);
-	}
-
-	protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
-		StandardTokenizer source = new StandardTokenizer(reader); // splits at ". ", etc.
+		StandardTokenizer source = new StandardTokenizer(); // splits at ". ", etc.
 
 		TokenStream result = source;
 		result = new WordSplitTokenizer(result); // non-alphanumerics
@@ -53,24 +48,6 @@ public class FileAnalyzer extends Analyzer {
 		result = new LowerCaseFilter(result);
 
 		return new TokenStreamComponents(source, result);
-	}
-
-	/**
-	 * Create a token stream for the given reader.
-	 * This is used when analyzing file contents.
-	 * 
-	 * @param reader the input reader
-	 * @return TokenStream
-	 */
-	public TokenStream tokenStream(Reader reader) {
-		// Use Field.CONTENTS as the default field name since this analyzer
-		// is primarily used for file content indexing
-		return createComponents(Field.CONTENTS.toString(), reader).getTokenStream();
-	}
-
-	@Override
-	public TokenStream tokenStream(String fieldName, Reader reader) {
-		return tokenStream(reader);
 	}
 
 	// used when debugging

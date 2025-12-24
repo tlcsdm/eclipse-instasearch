@@ -11,8 +11,6 @@
  */
 package com.tlcsdm.eclipse.instasearch.indexing;
 
-import java.io.Reader;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
@@ -41,7 +39,7 @@ public class QueryAnalyzer extends Analyzer {
 	@Override
 	protected TokenStreamComponents createComponents(String fieldName) {
 		if (Field.CONTENTS.toString().equals(fieldName)) {
-			StandardTokenizer source = new StandardTokenizer(null); // splits at ". ", "-"
+			StandardTokenizer source = new StandardTokenizer(); // splits at ". ", "-"
 
 			TokenStream result = source;
 			result = new WordSplitTokenizer(result); // non-alphanumerics
@@ -55,26 +53,6 @@ public class QueryAnalyzer extends Analyzer {
 		} else { // PROJECT, EXT fields
 			Tokenizer source = new KeywordTokenizer();
 			return new TokenStreamComponents(source, source); // return whole stream contents as token
-		}
-	}
-
-	@Override
-	public TokenStream tokenStream(String fieldName, Reader reader) {
-		// This method is used by QueryParser
-		if (Field.CONTENTS.toString().equals(fieldName)) {
-			StandardTokenizer source = new StandardTokenizer(reader);
-
-			TokenStream result = source;
-			result = new WordSplitTokenizer(result);
-			result = new DotSplitTokenizer(result);
-			result = new CamelCaseTokenizer(result);
-
-			result = new LengthFilter(result, minWordLength, MAX_WORD_LENGTH);
-
-			return result;
-
-		} else {
-			return new KeywordTokenizer(reader);
 		}
 	}
 

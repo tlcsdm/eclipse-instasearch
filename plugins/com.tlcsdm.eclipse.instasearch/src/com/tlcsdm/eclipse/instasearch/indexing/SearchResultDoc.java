@@ -23,7 +23,6 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.DocIdSetIterator;
-import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
 import org.eclipse.core.resources.IFile;
@@ -134,6 +133,26 @@ public class SearchResultDoc {
 			
 			return tf * idf;
 		}
+	}
+
+	/**
+	 * Returns a score vector for given terms. The scores are computed using TF-IDF.
+	 * 
+	 * @param terms collection of term strings to get scores for
+	 * @return array of term scores (tf-idf) for the given terms
+	 */
+	public float[] getTermScoreVector(Collection<String> terms) {
+		float[] scores = new float[terms.size()];
+		int i = 0;
+		for (String term : terms) {
+			try {
+				scores[i] = (float) getTermScore(term);
+			} catch (IOException e) {
+				scores[i] = 0;
+			}
+			i++;
+		}
+		return scores;
 	}
 
 	public IFile getFile() {
