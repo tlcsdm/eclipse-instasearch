@@ -311,31 +311,13 @@ version(s), and exceptions or additional permissions here}.&quot;
       <import plugin="org.eclipse.jface.text"/>
       <import plugin="org.eclipse.debug.ui"/>
       <import plugin="org.apache.commons.lang3"/>
+      <import plugin="org.apache.lucene.core"/>
+      <import plugin="org.apache.lucene.analysis-common"/>
+      <import plugin="org.apache.lucene.queryparser"/>   
    </requires>
 
    <plugin
          id="com.tlcsdm.eclipse.instasearch"
          version="0.0.0"/>
-
-   <plugin
-         id="org.apache.lucene.core"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.apache.lucene.analysis-common"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.apache.lucene.queryparser"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
 
 </feature>
