@@ -205,11 +205,11 @@ public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer impl
 
 	@Override
 	public boolean incrementToken() throws IOException {
-		clearAttributes();
-		// Check if parser is initialized
+		// Check if parser is initialized first
 		if (token_source == null) {
 			return false;
 		}
+		clearAttributes();
 		// Use the JavaCC token stream to obtain the next token
 		try {
 			Token t = getNextToken();

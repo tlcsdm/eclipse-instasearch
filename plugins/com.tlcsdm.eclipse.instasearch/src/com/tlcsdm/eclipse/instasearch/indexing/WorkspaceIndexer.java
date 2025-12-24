@@ -413,8 +413,10 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 	}
 
 	/**
+	 * Deletes documents for a project from the index.
+	 * 
 	 * @param project
-	 * @return deletedCount
+	 * @return 1 if the delete operation was submitted successfully, 0 otherwise
 	 * @throws Exception
 	 */
 	public int deleteProject(IProject project) throws Exception {
@@ -422,11 +424,15 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 		String filePath = project.getFullPath().toString();
 
 		Term term = Field.PROJ.createTerm(filePath);
-		long seqNo = writer.deleteDocuments(term);
+		// In Lucene 9.x, deleteDocuments returns a sequence number, not a count
+		// The actual deletion happens asynchronously
+		writer.deleteDocuments(term);
 
 		writer.close();
 
-		return seqNo > 0 ? 1 : 0;
+		// Return 1 to indicate the delete operation was submitted
+		// The actual count of deleted documents is not directly available in Lucene 9.x
+		return 1;
 	}
 
 	public boolean isConflicting(ISchedulingRule rule) {

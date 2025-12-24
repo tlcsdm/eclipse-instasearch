@@ -298,7 +298,9 @@ class ResultContentProvider implements ITreeContentProvider {
 																	// then skip
 				continue;
 
-			// Simplified - term score vectors not used in Lucene 9
+			// Term score vectors are not computed in Lucene 9.x due to API changes.
+			// The TermFreqVector API was removed. Line scoring now relies on
+			// match count, exact match count, and matched term boost instead.
 			float[] lineTermScoreVector = new float[matchedTerms.size()];
 			float[] matchedTermScoreVector = new float[matchedTerms.size()];
 
