@@ -16,7 +16,6 @@ import java.util.Collection;
 import java.util.Locale;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
@@ -35,10 +34,8 @@ public class SearchResultDoc {
 	private int docId;
 	private float score;
 	private int matchCount;
-	private Directory indexDir;
 
 	public SearchResultDoc(Directory dir, Document doc, int docId, float score) {
-		this.indexDir = dir;
 		this.docId = docId;
 		this.doc = doc;
 		this.score = score;
@@ -145,12 +142,12 @@ public class SearchResultDoc {
 	 */
 	public void computeMatchCount(IndexReader reader, Collection<String> queryTerms) throws IOException {
 		Terms terms = reader.termVectors().get(docId, Field.CONTENTS.toString());
-		
+
 		if (terms == null)
 			return;
 
 		int freqSum = 0;
-		
+
 		for (String queryTerm : queryTerms) {
 			TermsEnum termsEnum = terms.iterator();
 			BytesRef termBytes = new BytesRef(queryTerm);

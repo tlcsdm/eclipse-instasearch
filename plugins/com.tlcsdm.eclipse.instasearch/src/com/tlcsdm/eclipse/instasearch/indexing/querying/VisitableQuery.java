@@ -76,12 +76,11 @@ public class VisitableQuery {
 
 		} else if (query instanceof BooleanQuery) {
 			BooleanQuery boolQuery = (BooleanQuery) query;
-			BooleanQuery newBoolQuery = queryVisitor.visit(boolQuery);
 
 			// In Lucene 9.x, BooleanQuery is immutable, so we need to rebuild it
 			BooleanQuery.Builder builder = new BooleanQuery.Builder();
 			builder.setMinimumNumberShouldMatch(boolQuery.getMinimumNumberShouldMatch());
-			
+
 			for (BooleanClause boolClause : boolQuery.clauses()) {
 				if (!queryVisitor.visit(boolClause))
 					continue;

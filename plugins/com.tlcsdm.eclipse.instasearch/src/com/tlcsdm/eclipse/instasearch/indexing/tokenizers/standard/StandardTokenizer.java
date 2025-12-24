@@ -2,7 +2,7 @@
 package com.tlcsdm.eclipse.instasearch.indexing.tokenizers.standard;
 
 import java.io.IOException;
-import java.io.Reader;
+
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
@@ -28,7 +28,10 @@ import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
  */
 public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer implements StandardTokenizerConstants {
 
-	/** Constructs a tokenizer with no initial reader - reader will be set by setReader(). */
+	/**
+	 * Constructs a tokenizer with no initial reader - reader will be set by
+	 * setReader().
+	 */
 	public StandardTokenizer() {
 		// No-arg constructor, reader will be set by setReader()
 	}
@@ -78,6 +81,7 @@ public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer impl
 	 * <p>
 	 * The returned token's type is set to an element of
 	 * {@link StandardTokenizerConstants#tokenImage}.
+	 * 
 	 * @deprecated Use incrementToken() instead
 	 */
 	@Deprecated

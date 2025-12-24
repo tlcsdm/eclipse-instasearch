@@ -128,7 +128,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 		try {
 			query = parseSearchQuery(searchQuery, reader, exact, true);
 
-		} catch (BooleanQuery.TooManyClauses e) { // too many, try without prefix search
+		} catch (IndexSearcher.TooManyClauses e) { // too many, try without prefix search
 			query = parseSearchQuery(searchQuery, reader, exact, false);
 
 		} catch (ParseException e) {
@@ -266,8 +266,9 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 		// In Lucene 9.x, we iterate through all leaves and collect terms
 		for (int i = 0; i < reader.leaves().size(); i++) {
 			Terms terms = reader.leaves().get(i).reader().terms(fieldName);
-			if (terms == null) continue;
-			
+			if (terms == null)
+				continue;
+
 			TermsEnum termsEnum = terms.iterator();
 			BytesRef term;
 			while ((term = termsEnum.next()) != null) {
@@ -345,8 +346,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	private Query parseSearchQuery(SearchQuery searchQuery, IndexReader reader, boolean exact, boolean prefix)
 			throws ParseException, IOException {
 		String searchString = searchQuery.getSearchString();
-
-		BooleanQuery.setMaxClauseCount(5000); // so we don't get TooManyClauses exceptions
+		IndexSearcher.setMaxClauseCount(5000); // so we don't get TooManyClauses exceptions
 
 		Query exactQuery = createExactQuery(searchQuery);
 		Query returnQuery;
@@ -356,13 +356,14 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 			returnQuery = exactQuery;
 		} else {
 			Query query = parserSearchString(searchString, queryAnalyzer);
-			// In Lucene 9.x, boost is applied via BoostQuery but for simplicity we use combined queries
+			// In Lucene 9.x, boost is applied via BoostQuery but for simplicity we use
+			// combined queries
 			returnQuery = combineQueries(query, exactQuery);
 		}
 
 		returnQuery = rewriteQuery(searchQuery, prefix, returnQuery);
 
-		returnQuery = returnQuery.rewrite(reader); // lucene's rewrite (ie expand prefix queries)
+		returnQuery = returnQuery.rewrite(new IndexSearcher(reader)); // lucene's rewrite (ie expand prefix queries)
 
 		return returnQuery;
 	}
@@ -467,7 +468,8 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	private Query parserSearchString(String searchString, Analyzer analyzer) throws ParseException {
 		QueryParser queryParser = new QueryParser(Field.CONTENTS.toString(), analyzer);
 		queryParser.setDefaultOperator(Operator.AND); // all fields required
-		// In Lucene 9.x, setLowercaseExpandedTerms was removed - case handling is done by analyzer
+		// In Lucene 9.x, setLowercaseExpandedTerms was removed - case handling is done
+		// by analyzer
 		queryParser.setPhraseSlop(DEFAULT_PHRASE_SLOP);
 
 		/*
@@ -490,7 +492,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	 */
 	private static Map<String, Float> extractTerms(Query query) {
 		Map<String, Float> terms = new HashMap<String, Float>();
-		
+
 		// Use QueryVisitor to extract terms from the query
 		query.visit(new org.apache.lucene.search.QueryVisitor() {
 			@Override
