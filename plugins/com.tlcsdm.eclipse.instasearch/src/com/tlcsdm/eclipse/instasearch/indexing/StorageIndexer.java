@@ -168,33 +168,36 @@ public class StorageIndexer {
 	}
 
 	/**
-	 * Delethe the whole index
+	 * Delete the whole index
 	 * 
 	 * @throws Exception
 	 */
 	public void deleteIndex() throws Exception {
 
+		changeListener.onIndexReset(); // close searcher because index is deleted
+
 		RetryingRunnable runnable = new RetryingRunnable() {
 			public void run() throws Exception {
-				IndexWriter w = createIndexWriter(true); // open for writing and close (make empty)
-				w.deleteAll();
-				w.commit();
-				w.close();
-
 				Directory dir = getIndexDir();
-				for (String file : dir.listAll()) {
-					dir.sync(Collections.singleton(file));
-					dir.deleteFile(file);
+				
+				// First, delete all files in the directory (including lock file)
+				String[] files = dir.listAll();
+				for (String file : files) {
+					try {
+						dir.deleteFile(file);
+					} catch (IOException ignored) {
+						// Best effort deletion - some files may be locked
+					}
 				}
-				dir.close();
+				
+				// Reset the cached directory for clean state
+				indexDir = null;
 			}
 
 			public boolean handleException(Throwable e) {
 				return true;
 			}
 		};
-
-		changeListener.onIndexReset(); // close searcher because index is deleted
 
 		runRetryingRunnable(runnable); // delete index with retry
 	}

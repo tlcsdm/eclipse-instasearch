@@ -14,7 +14,6 @@ package com.tlcsdm.eclipse.instasearch;
 import java.io.IOException;
 
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
 import org.eclipse.core.resources.WorkspaceJob;
 import org.eclipse.core.runtime.jobs.Job;
 
@@ -139,10 +138,8 @@ public class InstaSearch {
 	public SearcherConfig getSearcherConfig() {
 		return new SearcherConfig() {
 			public Directory getIndexDir() throws IOException {
-				// InstaSearchPlugin.getIndexDirLocation() returns a File -> use toPath()
-				java.io.File idxDir = InstaSearchPlugin.getIndexDirLocation();
-				// Use FSDirectory.open(Path) for Lucene 9.x
-				return FSDirectory.open(idxDir.toPath());
+				// Share the same directory as the indexer to avoid lock conflicts
+				return indexer.getIndexDir();
 			}
 
 			public boolean getBoolPref(String pref) {

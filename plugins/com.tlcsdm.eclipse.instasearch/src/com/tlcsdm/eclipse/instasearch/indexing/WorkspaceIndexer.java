@@ -61,6 +61,9 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 	private String fileExtensions[] = getIndexableFileExtensions();
 	private List<Pattern> excludedDirRegExes = getExcludedDirsRegExes();
 	private boolean indexEmptyExtension = InstaSearchPlugin.getBoolPref(PreferenceConstants.P_INDEX_EMPTY_EXTENSION);
+	
+	// Cache the FSDirectory to avoid lock issues with multiple instances
+	private Directory cachedIndexDir = null;
 
 	/**
 	 * @throws Exception
@@ -74,7 +77,25 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 
 	@Override
 	public Directory getIndexDir() throws IOException {
-		return FSDirectory.open(getIndexDirLocation().toPath());
+		if (cachedIndexDir == null) {
+			cachedIndexDir = FSDirectory.open(getIndexDirLocation().toPath());
+		}
+		return cachedIndexDir;
+	}
+	
+	/**
+	 * Close and release the cached directory to release any locks
+	 */
+	public void closeIndexDir() {
+		if (cachedIndexDir != null) {
+			try {
+				cachedIndexDir.close();
+			} catch (IOException ignored) {
+				// Best effort close
+			} finally {
+				cachedIndexDir = null;
+			}
+		}
 	}
 
 	/**
@@ -84,9 +105,11 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 	public void createIndex(IWorkspaceRoot root, IProgressMonitor monitor) throws Exception {
 
 		getIndexChangeListener().onIndexReset();
+		
+		// Close the cached directory to release locks before rebuilding
+		closeIndexDir();
 
 		deleteIndex();
-		Directory indexDirectory = FSDirectory.open(getIndexDirLocation().toPath());
 
 		IndexWriter indexWriter = createIndexWriter(true);
 
@@ -96,7 +119,6 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 		indexWriter.forceMerge(1, true);
 
 		indexWriter.close();
-		indexDirectory.close();
 
 		getIndexChangeListener().onIndexUpdate();
 
