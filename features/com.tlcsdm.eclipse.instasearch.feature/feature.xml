@@ -318,14 +318,21 @@ version(s), and exceptions or additional permissions here}.&quot;
          version="0.0.0"/>
 
    <plugin
-         id="org.apache.lucene"
+         id="org.apache.lucene.core"
          download-size="0"
          install-size="0"
          version="0.0.0"
          unpack="false"/>
 
    <plugin
-         id="org.apache.lucene.analysis"
+         id="org.apache.lucene.analysis-common"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.apache.lucene.queryparser"
          download-size="0"
          install-size="0"
          version="0.0.0"
@@ -339,35 +346,7 @@ version(s), and exceptions or additional permissions here}.&quot;
          unpack="false"/>
 
    <plugin
-         id="org.apache.lucene.memory"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.apache.lucene.misc"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
          id="org.apache.lucene.queries"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.apache.lucene.snowball"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.apache.lucene.spellchecker"
          download-size="0"
          install-size="0"
          version="0.0.0"

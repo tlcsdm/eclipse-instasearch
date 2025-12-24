@@ -36,18 +36,17 @@ public class UppercaseNameExpander extends QueryVisitor {
 		String text = term.text();
 
 		if (text.matches("[A-Z][a-z0-9_]*[A-Z].*")) { // if has several uppercase letters
-			BooleanQuery bq = new BooleanQuery();
+			BooleanQuery.Builder bqBuilder = new BooleanQuery.Builder();
 
-			bq.add(termQuery, Occur.SHOULD);
+			bqBuilder.add(termQuery, Occur.SHOULD);
 
 			String wcText = text.replaceAll("([A-Z][a-z0-9_]*)", "$1*");
 
 			Term wcTerm = Field.NAME.createTerm(wcText);
 			WildcardQuery wcQuery = new WildcardQuery(wcTerm);
-			wcQuery.setBoost(termQuery.getBoost() / 2f);
-			bq.add(wcQuery, Occur.SHOULD);
+			bqBuilder.add(wcQuery, Occur.SHOULD);
 
-			return bq;
+			return bqBuilder.build();
 		}
 
 		return super.visit(termQuery, field);

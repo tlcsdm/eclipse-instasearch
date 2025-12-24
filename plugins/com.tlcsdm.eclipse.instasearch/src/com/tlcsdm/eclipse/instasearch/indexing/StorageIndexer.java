@@ -28,19 +28,19 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.Field.TermVector;
+import org.apache.lucene.document.FieldType;
+import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TieredMergePolicy;
-import org.apache.lucene.search.Similarity;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.RAMDirectory;
-import org.apache.lucene.util.Version;
+import org.apache.lucene.store.ByteBuffersDirectory;
 import org.eclipse.core.resources.IStorage;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 
 /**
@@ -55,9 +55,26 @@ public class StorageIndexer {
 
 	private IndexChangeListener changeListener = new NullIndexChangeListener();
 
-	private static final Similarity similarity = new LengthNormSimilarity();
 	private static final int MAX_RETRY_ATTEMPTS = 10;
 	private Directory indexDir;
+
+	// Field type for stored and indexed fields with term vectors
+	private static final FieldType STORED_INDEXED_FIELD_TYPE;
+	static {
+		STORED_INDEXED_FIELD_TYPE = new FieldType();
+		STORED_INDEXED_FIELD_TYPE.setStored(true);
+		STORED_INDEXED_FIELD_TYPE.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
+		STORED_INDEXED_FIELD_TYPE.setTokenized(false);
+		STORED_INDEXED_FIELD_TYPE.freeze();
+	}
+
+	// Field type for contents with term vectors
+	private static final FieldType CONTENTS_FIELD_TYPE;
+	static {
+		CONTENTS_FIELD_TYPE = new FieldType(TextField.TYPE_NOT_STORED);
+		CONTENTS_FIELD_TYPE.setStoreTermVectors(true);
+		CONTENTS_FIELD_TYPE.freeze();
+	}
 
 	/**
 	 * @throws IOException
@@ -71,12 +88,12 @@ public class StorageIndexer {
 		Directory indexDir = getIndexDir();
 
 		if (IndexWriter.isLocked(indexDir)) // should not be locked at startup, unlock
-			IndexWriter.unlock(indexDir);
+			indexDir.obtainLock(IndexWriter.WRITE_LOCK_NAME).close();
 	}
 
 	public Directory getIndexDir() throws IOException {
 		if (indexDir == null)
-			indexDir = new RAMDirectory();
+			indexDir = new ByteBuffersDirectory();
 
 		return indexDir;
 	}
@@ -87,14 +104,12 @@ public class StorageIndexer {
 	 * @throws IOException
 	 */
 	public IndexWriter createIndexWriter(boolean create) throws IOException {
-		IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_30, fileAnalyzer);
+		IndexWriterConfig config = new IndexWriterConfig(fileAnalyzer);
 		// OpenMode
 		config.setOpenMode(create ? IndexWriterConfig.OpenMode.CREATE : IndexWriterConfig.OpenMode.APPEND);
-		// Similarity（原 indexWriter.setSimilarity）
-		config.setSimilarity(similarity);
-		// MergePolicy（替代 setMergeFactor）
+		// MergePolicy
 		TieredMergePolicy mergePolicy = new TieredMergePolicy();
-		mergePolicy.setSegmentsPerTier(2); // 类似 mergeFactor=2
+		mergePolicy.setSegmentsPerTier(2);
 		mergePolicy.setMaxMergeAtOnce(2);
 		config.setMergePolicy(mergePolicy);
 
@@ -106,7 +121,11 @@ public class StorageIndexer {
 	 * @throws IOException
 	 */
 	public boolean isIndexed() throws IOException {
-		return IndexReader.indexExists(getIndexDir());
+		try {
+			return DirectoryReader.indexExists(getIndexDir());
+		} catch (IOException e) {
+			return false;
+		}
 	}
 
 	/**
@@ -117,7 +136,7 @@ public class StorageIndexer {
 	public boolean isReadable() {
 
 		try {
-			IndexReader reader = IndexReader.open(getIndexDir(), true);
+			IndexReader reader = DirectoryReader.open(getIndexDir());
 			reader.close();
 
 		} catch (IOException readingException) {
@@ -139,15 +158,12 @@ public class StorageIndexer {
 				IndexWriter w = createIndexWriter(true); // open for writing and close (make empty)
 				w.deleteAll();
 				w.commit();
-				w.close(true);
+				w.close();
 
 				Directory dir = getIndexDir();
 				for (String file : dir.listAll()) {
-					if (dir.fileExists(file)) // still exits
-					{
-						dir.sync(Collections.singleton(file));
-						dir.deleteFile(file);
-					}
+					dir.sync(Collections.singleton(file));
+					dir.deleteFile(file);
 				}
 				dir.close();
 			}
@@ -197,7 +213,6 @@ public class StorageIndexer {
 	 * @param projectName
 	 * @param modificationStamp
 	 * @param jar               path to jar file containing this file or null
-	 * @throws CoreException
 	 * @throws IOException
 	 */
 	public void indexStorage(IndexWriter indexWriter, IStorage storage, String projectName, long modificationStamp,
@@ -215,13 +230,13 @@ public class StorageIndexer {
 			ext = NO_VALUE;
 
 		Document doc = new Document();
-		doc.add(createLuceneField(Field.CONTENTS, isReader));
-		doc.add(createLuceneField(Field.FILE, fullPath.toString()));
-		doc.add(createLuceneField(Field.PROJ, projectName));
-		doc.add(createLuceneField(Field.NAME, fullPath.lastSegment()));
-		doc.add(createLuceneField(Field.EXT, ext.toLowerCase(Locale.ENGLISH)));
-		doc.add(createLuceneField(Field.MODIFIED, Long.toString(modificationStamp)));
-		doc.add(createLuceneField(Field.JAR, (jar == null) ? NO_VALUE : jar));
+		doc.add(createContentsField(Field.CONTENTS, isReader));
+		doc.add(createStoredField(Field.FILE, fullPath.toString()));
+		doc.add(createStoredField(Field.PROJ, projectName));
+		doc.add(createStoredField(Field.NAME, fullPath.lastSegment()));
+		doc.add(createStoredField(Field.EXT, ext.toLowerCase(Locale.ENGLISH)));
+		doc.add(createStoredField(Field.MODIFIED, Long.toString(modificationStamp)));
+		doc.add(createStoredField(Field.JAR, (jar == null) ? NO_VALUE : jar));
 
 		indexWriter.addDocument(doc);
 	}
@@ -314,23 +329,22 @@ public class StorageIndexer {
 	}
 
 	public void deleteStorage(IStorage storage) throws Exception {
-		IndexReader reader = IndexReader.open(getIndexDir(), false);
+		IndexWriter writer = createIndexWriter(false);
 
 		String filePath = storage.getFullPath().toString();
 
 		Term term = Field.FILE.createTerm(filePath);
-		reader.deleteDocuments(term);
+		writer.deleteDocuments(term);
 
-		reader.close();
+		writer.close();
 	}
 
-	private static org.apache.lucene.document.Field createLuceneField(Field fieldName, String value) {
-		return new org.apache.lucene.document.Field(fieldName.toString(), value, Store.YES,
-				org.apache.lucene.document.Field.Index.NOT_ANALYZED);
+	private static org.apache.lucene.document.Field createStoredField(Field fieldName, String value) {
+		return new org.apache.lucene.document.Field(fieldName.toString(), value, STORED_INDEXED_FIELD_TYPE);
 	}
 
-	private static org.apache.lucene.document.Field createLuceneField(Field fieldName, Reader reader) {
-		return new org.apache.lucene.document.Field(fieldName.toString(), reader, TermVector.YES);
+	private static org.apache.lucene.document.Field createContentsField(Field fieldName, Reader reader) {
+		return new org.apache.lucene.document.Field(fieldName.toString(), reader, CONTENTS_FIELD_TYPE);
 	}
 
 	/**
@@ -343,9 +357,10 @@ public class StorageIndexer {
 	public static Map<String, List<Integer>> extractTextTerms(String text) throws IOException {
 		Map<String, List<Integer>> terms = new HashMap<String, List<Integer>>();
 		TokenStream tokenStream = fileAnalyzer.tokenStream(Field.CONTENTS.toString(), new StringReader(text));
+		tokenStream.reset();
 
 		CharTermAttribute termAtt = tokenStream.addAttribute(CharTermAttribute.class);
-		OffsetAttribute offsetAtt = (OffsetAttribute) tokenStream.addAttribute(OffsetAttribute.class);
+		OffsetAttribute offsetAtt = tokenStream.addAttribute(OffsetAttribute.class);
 
 		while (tokenStream.incrementToken()) {
 			String termText = termAtt.toString().toLowerCase(Locale.ENGLISH);// get token text
@@ -360,6 +375,7 @@ public class StorageIndexer {
 
 			offsets.add(offset);
 		}
+		tokenStream.end();
 		tokenStream.close();
 
 		return terms;

@@ -13,7 +13,7 @@ package com.tlcsdm.eclipse.instasearch.indexing.querying;
 
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.FilteredQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
@@ -56,40 +56,40 @@ public class VisitableQuery {
 
 		Query returnQuery = query;
 
+		// Handle BoostQuery wrapper first
+		if (query instanceof BoostQuery) {
+			BoostQuery boostQuery = (BoostQuery) query;
+			Query innerQuery = accept(boostQuery.getQuery(), queryVisitor);
+			if (innerQuery != boostQuery.getQuery()) {
+				returnQuery = new BoostQuery(innerQuery, boostQuery.getBoost());
+			}
+			return returnQuery;
+		}
+
 		if (query instanceof TermQuery) {
 			TermQuery termQuery = (TermQuery) query;
 			Field field = Field.getByName(termQuery.getTerm().field());
 
 			Query newQuery = queryVisitor.visit(termQuery, field);
 
-			newQuery.setBoost(query.getBoost());
 			returnQuery = newQuery;
 
 		} else if (query instanceof BooleanQuery) {
 			BooleanQuery boolQuery = (BooleanQuery) query;
 			BooleanQuery newBoolQuery = queryVisitor.visit(boolQuery);
 
-			for (BooleanClause boolClause : boolQuery.getClauses()) {
+			// In Lucene 9.x, BooleanQuery is immutable, so we need to rebuild it
+			BooleanQuery.Builder builder = new BooleanQuery.Builder();
+			builder.setMinimumNumberShouldMatch(boolQuery.getMinimumNumberShouldMatch());
+			
+			for (BooleanClause boolClause : boolQuery.clauses()) {
 				if (!queryVisitor.visit(boolClause))
 					continue;
 				Query newQuery = accept(boolClause.getQuery(), queryVisitor);
-				boolClause.setQuery(newQuery);
+				builder.add(newQuery, boolClause.getOccur());
 			}
 
-			newBoolQuery.setBoost(boolQuery.getBoost());
-			newBoolQuery.setMinimumNumberShouldMatch(boolQuery.getMinimumNumberShouldMatch());
-
-			returnQuery = newBoolQuery;
-		} else if (query instanceof FilteredQuery) {
-			FilteredQuery fq = (FilteredQuery) query;
-			Query newQuery = accept(fq.getQuery(), queryVisitor);
-
-			if (newQuery != fq.getQuery()) {
-				FilteredQuery newFq = new FilteredQuery(fq.getQuery(), fq.getFilter());
-				newFq.setBoost(fq.getBoost());
-
-				returnQuery = newFq;
-			}
+			returnQuery = builder.build();
 		} else if (query instanceof PhraseQuery) {
 			PhraseQuery phraseQuery = (PhraseQuery) query;
 
@@ -101,7 +101,6 @@ public class VisitableQuery {
 
 			Query newQuery = queryVisitor.visit(wildcardQuery, field);
 
-			newQuery.setBoost(query.getBoost());
 			returnQuery = newQuery;
 
 		} else if (query instanceof PrefixQuery) {
@@ -110,7 +109,6 @@ public class VisitableQuery {
 
 			Query newQuery = queryVisitor.visit(prefixQuery, field);
 
-			newQuery.setBoost(query.getBoost());
 			returnQuery = newQuery;
 		} else {
 			returnQuery = queryVisitor.visitQuery(query);

@@ -16,11 +16,12 @@ import java.util.Collection;
 import java.util.Locale;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermFreqVector;
-import org.apache.lucene.search.Similarity;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.util.BytesRef;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.runtime.IPath;
@@ -32,8 +33,6 @@ public class SearchResultDoc {
 
 	private Document doc;
 	private int docId;
-	private TermFreqVector termFreqVector;
-	private float[] termScoreVector;
 	private float score;
 	private int matchCount;
 	private Directory indexDir;
@@ -64,10 +63,10 @@ public class SearchResultDoc {
 	}
 
 	public boolean isInJar() {
-		if (doc.getFieldable(Field.JAR.toString()) == null)
-			return false;
-
 		String jarField = getFieldValue(Field.JAR);
+
+		if (jarField == null)
+			return false;
 
 		if (StorageIndexer.NO_VALUE.equals(jarField))
 			return false;
@@ -92,104 +91,6 @@ public class SearchResultDoc {
 
 	public String getProjectName() {
 		return getProject().lastSegment();
-	}
-
-	/**
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
-	private float[] getTermScoreVector() throws IOException {
-		if (termScoreVector == null) {
-			IndexReader reader = IndexReader.open(indexDir, true);
-
-			if (termFreqVector == null)
-				createFreqVect(reader);
-
-			termScoreVector = createTermScoreVector(termFreqVector, reader);
-			reader.close();
-		}
-
-		return termScoreVector;
-	}
-
-	private TermFreqVector getTermFreqVector() throws IOException {
-		if (termFreqVector == null) {
-			IndexReader reader = IndexReader.open(indexDir, true);
-			createFreqVect(reader);
-			reader.close();
-		}
-
-		return termFreqVector;
-	}
-
-	private void createFreqVect(IndexReader reader) throws IOException {
-		termFreqVector = reader.getTermFreqVector(docId, Field.CONTENTS.toString()); // obtain only when requested
-	}
-
-	/**
-	 * Returns a vector of given term scores (tf-idf). The size of the vector is the
-	 * number of terms in this document The term positions in the vector are the
-	 * same as in the term frequency vector
-	 * 
-	 * @param terms
-	 * @return TermScoreVector
-	 * @throws IOException
-	 */
-	public float[] getTermScoreVector(Collection<String> terms) throws IOException {
-		float[] allTermScoreVect = getTermScoreVector();
-		float[] termScoreVect = new float[allTermScoreVect.length];
-		TermFreqVector freqVector = getTermFreqVector();
-
-		for (String term : terms) {
-			int idx = freqVector.indexOf(term); // does a binary search
-			if (idx == -1)
-				continue;
-			termScoreVect[idx] = allTermScoreVect[idx];
-		}
-
-		return termScoreVect;
-	}
-
-	public double getTermScore(String term) throws IOException {
-		float[] allTermScoreVect = getTermScoreVector();
-		TermFreqVector freqVector = getTermFreqVector();
-
-		if (freqVector == null)
-			return 0;
-
-		int idx = freqVector.indexOf(term); // does a binary search
-		if (idx == -1)
-			return 0;
-		return allTermScoreVect[idx];
-	}
-
-	private float[] createTermScoreVector(TermFreqVector vect, IndexReader reader) throws IOException {
-		if (vect == null)
-			return new float[0];
-
-		int[] termFrequencies = vect.getTermFrequencies();
-		String[] terms = vect.getTerms();
-		float[] scores = new float[terms.length];
-
-		int numDocs = reader.maxDoc();
-		Similarity sim = Searcher.SIMILARITY;
-
-		for (int i = 0; i < terms.length; i++) {
-			String termText = terms[i];
-			Term term = new Term(Field.CONTENTS.toString(), termText);
-
-			float termFreq = sim.tf(termFrequencies[i]);
-
-			int docFreq = reader.docFreq(term);
-			float idf = sim.idf(docFreq, numDocs);
-
-			float tfIdf = termFreq * idf;
-
-			scores[i] = tfIdf;
-		}
-
-		return scores;
 	}
 
 	public IFile getFile() {
@@ -243,20 +144,19 @@ public class SearchResultDoc {
 	 * @throws IOException
 	 */
 	public void computeMatchCount(IndexReader reader, Collection<String> queryTerms) throws IOException {
-		if (termFreqVector == null)
-			createFreqVect(reader);
-
-		if (termFreqVector == null)
+		Terms terms = reader.termVectors().get(docId, Field.CONTENTS.toString());
+		
+		if (terms == null)
 			return;
 
-		int freqs[] = termFreqVector.getTermFrequencies();
 		int freqSum = 0;
-
-		for (String term : queryTerms) {
-			int idx = termFreqVector.indexOf(term); // does a binary search
-			if (idx == -1)
-				continue;
-			freqSum += freqs[idx];
+		
+		for (String queryTerm : queryTerms) {
+			TermsEnum termsEnum = terms.iterator();
+			BytesRef termBytes = new BytesRef(queryTerm);
+			if (termsEnum.seekExact(termBytes)) {
+				freqSum += (int) termsEnum.totalTermFreq();
+			}
 		}
 
 		matchCount = freqSum;

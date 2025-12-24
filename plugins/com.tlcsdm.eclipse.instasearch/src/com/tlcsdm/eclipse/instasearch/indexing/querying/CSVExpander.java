@@ -31,7 +31,7 @@ public class CSVExpander extends QueryVisitor {
 		Term term = termQuery.getTerm();
 
 		if (field != Field.CONTENTS && term.text().contains(",")) {
-			BooleanQuery bq = new BooleanQuery();
+			BooleanQuery.Builder bqBuilder = new BooleanQuery.Builder();
 
 			String vals[] = term.text().split(",");
 
@@ -42,10 +42,10 @@ public class CSVExpander extends QueryVisitor {
 				if ("".equals(val))
 					continue;
 				TermQuery tq = new TermQuery(field.createTerm(val));
-				bq.add(tq, Occur.SHOULD);
+				bqBuilder.add(tq, Occur.SHOULD);
 			}
 
-			return bq;
+			return bqBuilder.build();
 		}
 
 		return super.visit(termQuery, field);

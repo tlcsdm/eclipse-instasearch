@@ -30,7 +30,7 @@ public class WorkingSetExpander extends QueryVisitor {
 		Term term = termQuery.getTerm();
 
 		if (field == Field.WS) {
-			BooleanQuery bq = new BooleanQuery();
+			BooleanQuery.Builder bqBuilder = new BooleanQuery.Builder();
 			String workingSet = term.text();
 
 			String projects[] = InstaSearchPlugin.getWorkingSetProjects(workingSet);
@@ -42,10 +42,10 @@ public class WorkingSetExpander extends QueryVisitor {
 				if ("".equals(proj))
 					continue;
 				TermQuery tq = new TermQuery(Field.PROJ.createTerm(proj));
-				bq.add(tq, Occur.SHOULD);
+				bqBuilder.add(tq, Occur.SHOULD);
 			}
 
-			return bq;
+			return bqBuilder.build();
 		}
 
 		return super.visit(termQuery, field);

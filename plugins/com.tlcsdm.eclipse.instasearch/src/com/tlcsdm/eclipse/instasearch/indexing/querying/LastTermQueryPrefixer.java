@@ -44,21 +44,19 @@ public class LastTermQueryPrefixer extends QueryVisitor {
 				return termQuery;
 
 			PrefixQuery prefixQuery = new PrefixQuery(term);
-			prefixQuery.setBoost(termQuery.getBoost() / 4f);
 
-			BooleanQuery boolQuery = new BooleanQuery();
-			boolQuery.add(termQuery, Occur.SHOULD);
-			boolQuery.add(prefixQuery, Occur.SHOULD);
-			boolQuery.setBoost(termQuery.getBoost());
+			BooleanQuery.Builder boolQueryBuilder = new BooleanQuery.Builder();
+			boolQueryBuilder.add(termQuery, Occur.SHOULD);
+			boolQueryBuilder.add(prefixQuery, Occur.SHOULD);
 
-			return boolQuery;
+			return boolQueryBuilder.build();
 		}
 		return termQuery;
 	}
 
 	@Override
 	public BooleanQuery visit(BooleanQuery boolQuery) {
-		clauseCount += boolQuery.getClauses().length;
+		clauseCount += boolQuery.clauses().size();
 		return super.visit(boolQuery);
 	}
 

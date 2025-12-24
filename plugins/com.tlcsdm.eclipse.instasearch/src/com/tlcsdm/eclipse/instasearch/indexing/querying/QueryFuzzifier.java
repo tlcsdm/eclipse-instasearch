@@ -41,27 +41,23 @@ public class QueryFuzzifier extends QueryVisitor {
 		Term term = termQuery.getTerm();
 
 		PrefixQuery prefixQuery = new PrefixQuery(term);
-		prefixQuery.setBoost(termQuery.getBoost());
 
 		Term wildcardTerm = Field.CONTENTS.createTerm("*" + term.text() + "*");
 		WildcardQuery wildcardQuery = new WildcardQuery(wildcardTerm);
-		wildcardQuery.setBoost(termQuery.getBoost() * 0.75f);
 
 		FuzzyQuery fuzzyQuery = new FuzzyQuery(term);
-		fuzzyQuery.setBoost(termQuery.getBoost() * 0.5f);
 
-		BooleanQuery boolQuery = new BooleanQuery();
-		boolQuery.add(prefixQuery, Occur.SHOULD);
-		boolQuery.add(wildcardQuery, Occur.SHOULD);
-		boolQuery.add(fuzzyQuery, Occur.SHOULD);
-		boolQuery.setBoost(termQuery.getBoost());
+		BooleanQuery.Builder boolQueryBuilder = new BooleanQuery.Builder();
+		boolQueryBuilder.add(prefixQuery, Occur.SHOULD);
+		boolQueryBuilder.add(wildcardQuery, Occur.SHOULD);
+		boolQueryBuilder.add(fuzzyQuery, Occur.SHOULD);
 
-		return boolQuery;
+		return boolQueryBuilder.build();
 	}
 
 	@Override
 	public Query visit(PhraseQuery phraseQuery) {
-		BooleanQuery bq = new BooleanQuery();
+		BooleanQuery.Builder bqBuilder = new BooleanQuery.Builder();
 
 		for (Term t : phraseQuery.getTerms()) {
 			Field f = Field.getByName(t.field());
@@ -69,10 +65,10 @@ public class QueryFuzzifier extends QueryVisitor {
 			if (f != Field.CONTENTS)
 				return phraseQuery;
 
-			bq.add(new FuzzyQuery(t), Occur.SHOULD);
+			bqBuilder.add(new FuzzyQuery(t), Occur.SHOULD);
 		}
 
-		return bq;
+		return bqBuilder.build();
 	}
 
 	@Override

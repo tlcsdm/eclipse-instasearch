@@ -30,9 +30,10 @@ public class PhraseSearcher extends QueryVisitor {
 
 	@Override
 	public BooleanQuery visit(BooleanQuery boolQuery) {
-		PhraseQuery phraseQuery = new PhraseQuery();
+		PhraseQuery.Builder phraseQueryBuilder = new PhraseQuery.Builder();
+		phraseQueryBuilder.setSlop(DEFAULT_SLOP);
 
-		for (BooleanClause clause : boolQuery.getClauses()) {
+		for (BooleanClause clause : boolQuery.clauses()) {
 			if (clause.isProhibited() || !clause.isRequired() || !(clause.getQuery() instanceof TermQuery))
 				return super.visit(boolQuery); // only consider required terms
 
@@ -42,20 +43,16 @@ public class PhraseSearcher extends QueryVisitor {
 			if (field != Field.CONTENTS)
 				continue;
 
-			phraseQuery.add(tq.getTerm());
+			phraseQueryBuilder.add(tq.getTerm());
 		}
 
-		phraseQuery.setSlop(DEFAULT_SLOP);
+		PhraseQuery phraseQuery = phraseQueryBuilder.build();
 
-		BooleanQuery bq = new BooleanQuery();
-		bq.add(phraseQuery, Occur.SHOULD);
-		bq.add(boolQuery, Occur.SHOULD);
-		bq.setBoost(boolQuery.getBoost());
+		BooleanQuery.Builder bqBuilder = new BooleanQuery.Builder();
+		bqBuilder.add(phraseQuery, Occur.SHOULD);
+		bqBuilder.add(boolQuery, Occur.SHOULD);
 
-		phraseQuery.setBoost(boolQuery.getBoost());
-		boolQuery.setBoost(phraseQuery.getBoost() * 0.5f);
-
-		return bq;
+		return bqBuilder.build();
 	}
 
 }
