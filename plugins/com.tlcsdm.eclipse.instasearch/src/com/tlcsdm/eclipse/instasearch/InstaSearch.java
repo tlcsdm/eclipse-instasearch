@@ -141,8 +141,8 @@ public class InstaSearch {
 			public Directory getIndexDir() throws IOException {
 				// InstaSearchPlugin.getIndexDirLocation() returns a File -> use toPath()
 				java.io.File idxDir = InstaSearchPlugin.getIndexDirLocation();
-				// Use FSDirectory.open(File) for the current Lucene version in the project
-				return FSDirectory.open(idxDir);
+				// Use FSDirectory.open(Path) for Lucene 9.x
+				return FSDirectory.open(idxDir.toPath());
 			}
 
 			public boolean getBoolPref(String pref) {

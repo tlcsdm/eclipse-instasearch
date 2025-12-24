@@ -15,6 +15,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
@@ -44,21 +45,19 @@ public class LastTermQueryPrefixer extends QueryVisitor {
 				return termQuery;
 
 			PrefixQuery prefixQuery = new PrefixQuery(term);
-			prefixQuery.setBoost(termQuery.getBoost() / 4f);
 
-			BooleanQuery boolQuery = new BooleanQuery();
-			boolQuery.add(termQuery, Occur.SHOULD);
-			boolQuery.add(prefixQuery, Occur.SHOULD);
-			boolQuery.setBoost(termQuery.getBoost());
+			BooleanQuery.Builder builder = new BooleanQuery.Builder();
+			builder.add(termQuery, Occur.SHOULD);
+			builder.add(new BoostQuery(prefixQuery, 0.25f), Occur.SHOULD);
 
-			return boolQuery;
+			return builder.build();
 		}
 		return termQuery;
 	}
 
 	@Override
 	public BooleanQuery visit(BooleanQuery boolQuery) {
-		clauseCount += boolQuery.getClauses().length;
+		clauseCount += boolQuery.clauses().size();
 		return super.visit(boolQuery);
 	}
 

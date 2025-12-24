@@ -49,17 +49,16 @@ public class FilterSetter extends QueryVisitor {
 	}
 
 	private Query getFilterQuery(Query originalQuery, Field field, Set<String> values) {
-		BooleanQuery boolQuery = new BooleanQuery();
+		BooleanQuery.Builder builder = new BooleanQuery.Builder();
 
 		if (originalQuery != null) {
-			boolQuery.add(originalQuery, Occur.SHOULD); // original term
-			boolQuery.setBoost(originalQuery.getBoost());
+			builder.add(originalQuery, Occur.SHOULD); // original term
 		}
 
 		for (String value : values)
-			boolQuery.add(new TermQuery(field.createTerm(value)), Occur.SHOULD);
+			builder.add(new TermQuery(field.createTerm(value)), Occur.SHOULD);
 
-		return boolQuery;
+		return builder.build();
 	}
 
 	private Query addFilters(Query originalQuery, Field field) {
@@ -77,22 +76,22 @@ public class FilterSetter extends QueryVisitor {
 			return super.endVisit(query);
 
 		// combine filters with main query using AND
-		BooleanQuery conjQuery = new BooleanQuery();
-		conjQuery.add(query, Occur.MUST);
+		BooleanQuery.Builder conjBuilder = new BooleanQuery.Builder();
+		conjBuilder.add(query, Occur.MUST);
 
 		for (Field field : filter.keySet()) {
 			Set<String> values = filter.get(field); // possible values
 
 			if (values.size() == 1) {
 				String value = values.iterator().next();
-				conjQuery.add(new TermQuery(field.createTerm(value)), Occur.MUST);
+				conjBuilder.add(new TermQuery(field.createTerm(value)), Occur.MUST);
 			} else // several values, any of them should match (using OR here)
 			{
-				conjQuery.add(getFilterQuery(null, field, values), Occur.MUST);
+				conjBuilder.add(getFilterQuery(null, field, values), Occur.MUST);
 			}
 		}
 
-		return conjQuery;
+		return conjBuilder.build();
 	}
 
 	/**

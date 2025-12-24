@@ -11,28 +11,14 @@
  */
 package com.tlcsdm.eclipse.instasearch.indexing;
 
-import org.apache.lucene.search.DefaultSimilarity;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
 
 /**
- * 
+ * Custom similarity extending ClassicSimilarity (formerly DefaultSimilarity)
  */
-public class LengthNormSimilarity extends DefaultSimilarity {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+public class LengthNormSimilarity extends ClassicSimilarity {
 
-//	public float lengthNorm(String fieldName, int numTerms)
-//	{
-//		
-//		if( fieldName.equals(Field.CONTENTS.toString()) )
-//			return 1.0f; // don't decrease relevance for long documents 
-//		else
-//			return super.lengthNorm(fieldName, numTerms);
-//		
-//		//Alternative - Sweetspot similarity:
-//		//	1/sqrt( steepness * (abs(numTerms-min) + abs(numTerms-max) - (max-min)) + 1 ) .
-//		//	      - steepnes = 0.5, for [min, max] term docs returns 1
-//	}
+	// In Lucene 9.x, lengthNorm is computed differently
+	// Override if needed for custom length normalization behavior
 
 }

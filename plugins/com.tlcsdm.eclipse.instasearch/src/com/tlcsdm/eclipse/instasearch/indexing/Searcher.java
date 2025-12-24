@@ -21,27 +21,27 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermEnum;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
-import org.apache.lucene.queryParser.QueryParser.Operator;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.BooleanQuery.TooManyClauses;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.highlight.QueryTermExtractor;
-import org.apache.lucene.search.highlight.WeightedTerm;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.util.Version;
+import org.apache.lucene.util.BytesRef;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 
@@ -64,7 +64,6 @@ import com.tlcsdm.eclipse.instasearch.prefs.PreferenceConstants;
 /**
  * Searcher for searching the index using SearchQuery
  */
-@SuppressWarnings("deprecation")
 public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 
 	/** @see QueryParser#setPhraseSlop(int) */
@@ -75,12 +74,11 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	public static final int MIN_WORD_LENGTH = 1;
 	/** Character that identifies the current project in search query */
 	public static final String CURRENT_PROJECT_CHAR = ".";
-	private static final Version LUCENE_VERSION = Version.LUCENE_29;
 
 	private IndexSearcher indexSearcher;
+	private DirectoryReader directoryReader;
 
-	public static final LengthNormSimilarity SIMILARITY = new LengthNormSimilarity(); // TODO: share with
-																						// WorkspaceIndexer
+	public static final ClassicSimilarity SIMILARITY = new ClassicSimilarity();
 	private static final QueryAnalyzer queryAnalyzer = new QueryAnalyzer(MIN_WORD_LENGTH);
 
 	// Query visitors that modify the search query
@@ -132,7 +130,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 		try {
 			query = parseSearchQuery(searchQuery, reader, exact, true);
 
-		} catch (TooManyClauses e) { // too many, try without prefix search
+		} catch (IndexSearcher.TooManyClauses e) { // too many, try without prefix search
 			query = parseSearchQuery(searchQuery, reader, exact, false);
 
 		} catch (ParseException e) {
@@ -168,10 +166,10 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 		if (searchQuery.isCanceled())
 			return null;
 
-		// Use IndexSearcher.search to get TopDocs (replaces deprecated/removed TopDocCollector)
+		// Use IndexSearcher.search to get TopDocs
 		TopDocs topDocs = indexSearcher.search(query, maxResults);
 
-		if (topDocs.totalHits == 0)
+		if (topDocs.totalHits.value == 0)
 			return null;
 
 		ScoreDoc[] hits = topDocs.scoreDocs;
@@ -181,7 +179,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 			int docId = hits[i].doc;
 			float score = hits[i].score;
 
-			Document doc = reader.document(docId);
+			Document doc = reader.storedFields().document(docId);
 
 			SearchResultDoc resultDoc = new SearchResultDoc(getIndexDir(), doc, docId, score);
 
@@ -245,11 +243,10 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	 */
 	private IndexSearcher getIndexSearcher() throws IOException {
 		if (indexSearcher == null) {
-			indexSearcher = new IndexSearcher(getIndexDir(), true);
+			directoryReader = DirectoryReader.open(getIndexDir());
+			indexSearcher = new IndexSearcher(directoryReader);
 			indexSearcher.setSimilarity(SIMILARITY);
 		}
-
-		// indexSearcher.getIndexReader().isCurrent()
 
 		return indexSearcher;
 	}
@@ -266,25 +263,34 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	public List<String> getProposals(String prefixText, Field prefixField) throws IOException {
 		ArrayList<String> proposals = new ArrayList<String>();
 		IndexReader reader = getIndexSearcher().getIndexReader();
-		Term prefix = prefixField.createTerm(prefixText);
-		TermEnum enumerator = reader.terms(prefix);
 		prefixText = prefixText.toLowerCase(Locale.ENGLISH);
 
-		try {
+		// Iterate over all leaves (segments) and their terms
+		for (int i = 0; i < reader.leaves().size(); i++) {
+			Terms terms = reader.leaves().get(i).reader().terms(prefixField.toString());
+			if (terms == null)
+				continue;
+
+			TermsEnum termsEnum = terms.iterator();
+			BytesRef prefix = new BytesRef(prefixText);
+
+			// Seek to the prefix
+			if (termsEnum.seekCeil(prefix) == TermsEnum.SeekStatus.END)
+				continue;
+
 			do {
-				Term term = enumerator.term();
-
-				if (term != null && term.text().toLowerCase(Locale.ENGLISH).startsWith(prefixText)
-						&& term.field().equalsIgnoreCase(prefixField.toString())) {
-
-					proposals.add(term.text());
-
-				} else {
+				BytesRef termBytes = termsEnum.term();
+				if (termBytes == null)
 					break;
+
+				String termText = termBytes.utf8ToString();
+				if (!termText.toLowerCase(Locale.ENGLISH).startsWith(prefixText))
+					break;
+
+				if (!proposals.contains(termText)) {
+					proposals.add(termText);
 				}
-			} while (enumerator.next());
-		} finally {
-			enumerator.close();
+			} while (termsEnum.next() != null);
 		}
 
 		return proposals;
@@ -312,12 +318,13 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	}
 
 	private void resetSearcher() {
-		if (indexSearcher != null) {
+		if (directoryReader != null) {
 			try {
-				indexSearcher.close();
+				directoryReader.close();
 			} catch (IOException e) {
 				config.log(e);
 			} finally {
+				directoryReader = null;
 				indexSearcher = null;
 			}
 		}
@@ -352,7 +359,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 			throws ParseException, IOException {
 		String searchString = searchQuery.getSearchString();
 
-		BooleanQuery.setMaxClauseCount(5000); // so we don't get TooManyClauses exceptions
+		IndexSearcher.setMaxClauseCount(5000); // so we don't get TooManyClauses exceptions
 
 		Query exactQuery = createExactQuery(searchQuery);
 		Query returnQuery;
@@ -362,13 +369,16 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 			returnQuery = exactQuery;
 		} else {
 			Query query = parserSearchString(searchString, queryAnalyzer);
-			exactQuery.setBoost(query.getBoost() * 2f); // exact query more important
-			returnQuery = combineQueries(query, exactQuery);
+			BooleanQuery.Builder builder = new BooleanQuery.Builder();
+			// exact query more important - use boosting with BoostQuery
+			builder.add(new org.apache.lucene.search.BoostQuery(exactQuery, 2f), Occur.SHOULD);
+			builder.add(query, Occur.SHOULD);
+			returnQuery = builder.build();
 		}
 
 		returnQuery = rewriteQuery(searchQuery, prefix, returnQuery);
 
-		returnQuery = returnQuery.rewrite(reader); // lucene's rewrite (ie expand prefix queries)
+		returnQuery = returnQuery.rewrite(new IndexSearcher(reader)); // lucene's rewrite (ie expand prefix queries)
 		// System.out.println("q: " + returnQuery + " - exact " + exact);
 
 		return returnQuery;
@@ -384,7 +394,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 		String searchString = searchQuery.getSearchString();
 
 		if (searchString.contains(" ")) {
-			query = parserSearchString(searchString, new StandardAnalyzer(LUCENE_VERSION));
+			query = parserSearchString(searchString, new StandardAnalyzer());
 			query = convertToPhraseQuery(query);
 		} else {
 			query = parserSearchString(searchString, new KeywordAnalyzer()); // searchstring is one term
@@ -401,18 +411,25 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	}
 
 	private static Query convertToPhraseQuery(Query query) {
-		PhraseQuery phraseQuery = new PhraseQuery();
+		PhraseQuery.Builder phraseQueryBuilder = new PhraseQuery.Builder();
 
 		Set<Term> terms = new LinkedHashSet<Term>();
 
 		try {
-			query.extractTerms(terms);
+			query.visit(new org.apache.lucene.search.QueryVisitor() {
+				@Override
+				public void consumeTerms(Query query, Term... extractedTerms) {
+					for (Term t : extractedTerms) {
+						terms.add(t);
+					}
+				}
+			});
 
 			for (Term term : terms) {
 				Field field = Field.fromTerm(term);
 
 				if (Field.CONTENTS == field)
-					phraseQuery.add(term);
+					phraseQueryBuilder.add(term);
 				else
 					return query;
 			}
@@ -421,7 +438,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 			return query;
 		}
 
-		return phraseQuery;
+		return phraseQueryBuilder.build();
 	}
 
 	private Query rewriteQuery(SearchQuery searchQuery, boolean prefix, Query query) {
@@ -457,17 +474,11 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 		return visitableQuery.getQuery(); // the modified query after all visitors
 	}
 
-	private BooleanQuery combineQueries(Query query, Query exactQuery) {
-		BooleanQuery topQuery = new BooleanQuery();
-		topQuery.add(exactQuery, Occur.SHOULD);
-		topQuery.add(query, Occur.SHOULD);
-		return topQuery;
-	}
-
 	private Query parserSearchString(String searchString, Analyzer analyzer) throws ParseException {
-		QueryParser queryParser = new QueryParser(LUCENE_VERSION, Field.CONTENTS.toString(), analyzer);
+		QueryParser queryParser = new QueryParser(Field.CONTENTS.toString(), analyzer);
 		queryParser.setDefaultOperator(Operator.AND); // all fields required
-		queryParser.setLowercaseExpandedTerms(false);
+		// In Lucene 9.x, setLowercaseExpandedTerms was removed - expanded terms are now
+		// always lowercased
 		queryParser.setPhraseSlop(DEFAULT_PHRASE_SLOP);
 
 		/*
@@ -489,12 +500,20 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	 * @return
 	 */
 	private static Map<String, Float> extractTerms(Query query) {
-		WeightedTerm[] weightedTerms = QueryTermExtractor.getTerms(query, false, Field.CONTENTS.toString());
+		Map<String, Float> terms = new HashMap<String, Float>();
 
-		Map<String, Float> terms = new HashMap<String, Float>(weightedTerms.length);
-
-		for (WeightedTerm weightedTerm : weightedTerms)
-			terms.put(weightedTerm.getTerm(), weightedTerm.getWeight());
+		// Use QueryVisitor to extract terms in Lucene 9.x
+		query.visit(new org.apache.lucene.search.QueryVisitor() {
+			@Override
+			public void consumeTerms(Query query, Term... extractedTerms) {
+				for (Term term : extractedTerms) {
+					if (term.field().equals(Field.CONTENTS.toString())) {
+						// All terms get equal weight in this simple implementation
+						terms.put(term.text(), 1.0f);
+					}
+				}
+			}
+		});
 
 		return terms;
 	}

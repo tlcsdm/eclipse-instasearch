@@ -11,12 +11,11 @@
  */
 package com.tlcsdm.eclipse.instasearch.indexing;
 
-import java.io.Reader;
-
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.KeywordTokenizer;
-import org.apache.lucene.analysis.LengthFilter;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.core.KeywordTokenizer;
+import org.apache.lucene.analysis.miscellaneous.LengthFilter;
 
 import com.tlcsdm.eclipse.instasearch.indexing.tokenizers.CamelCaseTokenizer;
 import com.tlcsdm.eclipse.instasearch.indexing.tokenizers.DotSplitTokenizer;
@@ -38,23 +37,23 @@ public class QueryAnalyzer extends Analyzer {
 	}
 
 	@Override
-	public TokenStream tokenStream(String fieldName, Reader reader) {
+	protected TokenStreamComponents createComponents(String fieldName) {
 		if (Field.CONTENTS.toString().equals(fieldName)) {
-			TokenStream result = new StandardTokenizer(reader); // splits at ". ", "-"
+			StandardTokenizer source = new StandardTokenizer(); // splits at ". ", "-"
 
+			TokenStream result = source;
 			result = new WordSplitTokenizer(result); // non-alphanumerics
 			result = new DotSplitTokenizer(result); // com.package.names
 			result = new CamelCaseTokenizer(result); // CamelCaseIdentifiers
 
-			// result = new LowerCaseFilter(result);
-			result = new LengthFilter(false, result, minWordLength, MAX_WORD_LENGTH);
+			result = new LengthFilter(result, minWordLength, MAX_WORD_LENGTH);
 
-			return result;
+			return new TokenStreamComponents(source, result);
 
 		} else { // PROJECT, EXT fields
-			return new KeywordTokenizer(reader); // return whole stream contents as token
+			Tokenizer source = new KeywordTokenizer();
+			return new TokenStreamComponents(source, source); // return whole stream contents as token
 		}
-
 	}
 
 }

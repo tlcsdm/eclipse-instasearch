@@ -2,6 +2,7 @@
 package com.tlcsdm.eclipse.instasearch.indexing.tokenizers.standard;
 
 import java.io.IOException;
+
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
@@ -27,10 +28,14 @@ import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
  */
 public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer implements StandardTokenizerConstants {
 
-	/** Constructs a tokenizer for this Reader. */
-	public StandardTokenizer(java.io.Reader reader) {
-		this(new FastCharStream(reader));
-		this.input = reader;
+	/** No-argument constructor for use with Analyzer.createComponents(). */
+	public StandardTokenizer() {
+		super();
+		token_source = null;
+		token = new Token();
+		jj_gen = 0;
+		for (int i = 0; i < 1; i++)
+			jj_la1[i] = -1;
 	}
 
 	// Lucene attribute instances
@@ -38,57 +43,12 @@ public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer impl
 	private final OffsetAttribute offsetAtt = addAttribute(OffsetAttribute.class);
 	private final TypeAttribute typeAtt = addAttribute(TypeAttribute.class);
 
-	/**
-	 * Returns the next token in the stream, or null at EOS.
-	 * <p>
-	 * The returned token's type is set to an element of
-	 * {@link StandardTokenizerConstants#tokenImage}.
-	 */
-	final public org.apache.lucene.analysis.Token next() throws ParseException {
-		Token token = null;
-		switch ((jj_ntk == -1) ? jj_ntk() : jj_ntk) {
-		case ALPHANUM:
-			token = jj_consume_token(ALPHANUM);
-			break;
-		case APOSTROPHE:
-			token = jj_consume_token(APOSTROPHE);
-			break;
-		case ACRONYM:
-			token = jj_consume_token(ACRONYM);
-			break;
-		case NUM:
-			token = jj_consume_token(NUM);
-			break;
-		case CJ:
-			token = jj_consume_token(CJ);
-			break;
-		case 0:
-			token = jj_consume_token(0);
-			break;
-		default:
-			jj_la1[0] = jj_gen;
-			jj_consume_token(-1);
-			throw new ParseException();
-		}
-		if (token.kind == EOF) {
-			{
-				return null;
-			}
-		} else {
-			{
-				return new org.apache.lucene.analysis.Token(token.image, token.beginColumn, token.endColumn,
-						tokenImage[token.kind]);
-			}
-		}
-	}
-
 	/** Generated Token Manager. */
 	public StandardTokenizerTokenManager token_source;
 	/** Current token. */
 	public Token token;
 	/** Next token. */
 	public Token jj_nt;
-	private int jj_ntk;
 	private int jj_gen;
 	final private int[] jj_la1 = new int[1];
 	static private int[] jj_la1_0;
@@ -102,9 +62,9 @@ public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer impl
 
 	/** Constructor with user supplied CharStream. */
 	public StandardTokenizer(CharStream stream) {
+		super();
 		token_source = new StandardTokenizerTokenManager(stream);
 		token = new Token();
-		jj_ntk = -1;
 		jj_gen = 0;
 		for (int i = 0; i < 1; i++)
 			jj_la1[i] = -1;
@@ -114,7 +74,6 @@ public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer impl
 	public void ReInit(CharStream stream) {
 		token_source.ReInit(stream);
 		token = new Token();
-		jj_ntk = -1;
 		jj_gen = 0;
 		for (int i = 0; i < 1; i++)
 			jj_la1[i] = -1;
@@ -122,9 +81,9 @@ public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer impl
 
 	/** Constructor with generated Token Manager. */
 	public StandardTokenizer(StandardTokenizerTokenManager tm) {
+		super();
 		token_source = tm;
 		token = new Token();
-		jj_ntk = -1;
 		jj_gen = 0;
 		for (int i = 0; i < 1; i++)
 			jj_la1[i] = -1;
@@ -134,26 +93,9 @@ public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer impl
 	public void ReInit(StandardTokenizerTokenManager tm) {
 		token_source = tm;
 		token = new Token();
-		jj_ntk = -1;
 		jj_gen = 0;
 		for (int i = 0; i < 1; i++)
 			jj_la1[i] = -1;
-	}
-
-	private Token jj_consume_token(int kind) throws ParseException {
-		Token oldToken;
-		if ((oldToken = token).next != null)
-			token = token.next;
-		else
-			token = token.next = token_source.getNextToken();
-		jj_ntk = -1;
-		if (token.kind == kind) {
-			jj_gen++;
-			return token;
-		}
-		token = oldToken;
-		jj_kind = kind;
-		throw generateParseException();
 	}
 
 	/** Get the next Token. */
@@ -162,7 +104,6 @@ public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer impl
 			token = token.next;
 		else
 			token = token.next = token_source.getNextToken();
-		jj_ntk = -1;
 		jj_gen++;
 		return token;
 	}
@@ -177,13 +118,6 @@ public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer impl
 				t = t.next = token_source.getNextToken();
 		}
 		return t;
-	}
-
-	private int jj_ntk() {
-		if ((jj_nt = token.next) == null)
-			return (jj_ntk = (token.next = token_source.getNextToken()).kind);
-		else
-			return (jj_ntk = jj_nt.kind);
 	}
 
 	private java.util.List<int[]> jj_expentries = new java.util.ArrayList<int[]>();
@@ -230,10 +164,26 @@ public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer impl
 	}
 
 	@Override
+	public void reset() throws IOException {
+		super.reset();
+		// Reinitialize tokenizer with the new input
+		if (input != null) {
+			token_source = new StandardTokenizerTokenManager(new FastCharStream(input));
+		}
+		token = new Token();
+		jj_gen = 0;
+		for (int i = 0; i < 1; i++)
+			jj_la1[i] = -1;
+	}
+
+	@Override
 	public boolean incrementToken() throws IOException {
 		clearAttributes();
 		// Use the JavaCC token stream to obtain the next token
 		try {
+			if (token_source == null) {
+				return false;
+			}
 			Token t = getNextToken();
 			if (t.kind == EOF) {
 				return false;

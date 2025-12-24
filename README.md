@@ -14,7 +14,7 @@ Once InstaSearch is successfully installed, you'll see a nice little "InstaSearc
 
 You can also click the `Search` menu option at the top --> `InstaSearch...`
 
-<img src="readme/instasearch_new.jpg" alt="instasearch_new" title="instasearch_new"/>
+<img src="readme/search.png" alt="search" title="search"/>
 
 Search Tips
 ---

@@ -64,7 +64,8 @@ public class LowercaseConverter extends QueryVisitor {
 
 	@Override
 	public Query visit(PhraseQuery phraseQuery) {
-		PhraseQuery newQuery = new PhraseQuery();
+		PhraseQuery.Builder builder = new PhraseQuery.Builder();
+		builder.setSlop(phraseQuery.getSlop());
 
 		for (Term term : phraseQuery.getTerms()) {
 			Field field = Field.getByName(term.field());
@@ -72,12 +73,9 @@ public class LowercaseConverter extends QueryVisitor {
 				return phraseQuery;
 
 			Term newTerm = Field.CONTENTS.createTerm(term.text().toLowerCase(Locale.ENGLISH));
-			newQuery.add(newTerm);
+			builder.add(newTerm);
 		}
 
-		newQuery.setSlop(phraseQuery.getSlop());
-		newQuery.setBoost(phraseQuery.getBoost());
-
-		return newQuery;
+		return builder.build();
 	}
 }
