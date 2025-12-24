@@ -39,8 +39,6 @@ import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.highlight.QueryTermExtractor;
-import org.apache.lucene.search.highlight.WeightedTerm;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
 import org.eclipse.jface.util.IPropertyChangeListener;
@@ -469,7 +467,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	private Query parserSearchString(String searchString, Analyzer analyzer) throws ParseException {
 		QueryParser queryParser = new QueryParser(Field.CONTENTS.toString(), analyzer);
 		queryParser.setDefaultOperator(Operator.AND); // all fields required
-		queryParser.setLowercaseExpandedTerms(false);
+		// In Lucene 9.x, setLowercaseExpandedTerms was removed - case handling is done by analyzer
 		queryParser.setPhraseSlop(DEFAULT_PHRASE_SLOP);
 
 		/*
@@ -491,12 +489,20 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	 * @return
 	 */
 	private static Map<String, Float> extractTerms(Query query) {
-		WeightedTerm[] weightedTerms = QueryTermExtractor.getTerms(query, false, Field.CONTENTS.toString());
-
-		Map<String, Float> terms = new HashMap<String, Float>(weightedTerms.length);
-
-		for (WeightedTerm weightedTerm : weightedTerms)
-			terms.put(weightedTerm.getTerm(), weightedTerm.getWeight());
+		Map<String, Float> terms = new HashMap<String, Float>();
+		
+		// Use QueryVisitor to extract terms from the query
+		query.visit(new org.apache.lucene.search.QueryVisitor() {
+			@Override
+			public void consumeTerms(Query q, Term... queryTerms) {
+				for (Term t : queryTerms) {
+					if (Field.CONTENTS.toString().equals(t.field())) {
+						// All extracted terms get a default weight of 1.0
+						terms.put(t.text(), 1.0f);
+					}
+				}
+			}
+		});
 
 		return terms;
 	}

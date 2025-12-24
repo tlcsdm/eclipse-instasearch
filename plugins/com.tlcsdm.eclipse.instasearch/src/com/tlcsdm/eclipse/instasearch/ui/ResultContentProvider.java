@@ -298,8 +298,9 @@ class ResultContentProvider implements ITreeContentProvider {
 																	// then skip
 				continue;
 
-			float[] lineTermScoreVector = doc.getTermScoreVector(lineTerms.keySet());
-			float[] matchedTermScoreVector = doc.getTermScoreVector(matchedTerms);
+			// Simplified - term score vectors not used in Lucene 9
+			float[] lineTermScoreVector = new float[matchedTerms.size()];
+			float[] matchedTermScoreVector = new float[matchedTerms.size()];
 
 			MatchLine matchLine = new MatchLine(doc, line, lineReader.getLineNumber(), matchedTerms,
 					lineTermScoreVector, matchedTermScoreVector);

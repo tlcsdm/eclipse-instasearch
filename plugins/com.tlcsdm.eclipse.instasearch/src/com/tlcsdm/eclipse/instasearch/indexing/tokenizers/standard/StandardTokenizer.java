@@ -59,19 +59,6 @@ public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer impl
 	private int jj_kind = -1;
 
 	@Override
-	public void setReader(Reader reader) {
-		super.setReader(reader);
-		// Initialize the parser with the new reader
-		CharStream stream = new FastCharStream(reader);
-		token_source = new StandardTokenizerTokenManager(stream);
-		token = new Token();
-		jj_ntk = -1;
-		jj_gen = 0;
-		for (int i = 0; i < 1; i++)
-			jj_la1[i] = -1;
-	}
-
-	@Override
 	public void reset() throws IOException {
 		super.reset();
 		// Reinitialize when reset is called
