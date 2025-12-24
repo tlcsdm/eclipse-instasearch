@@ -209,7 +209,17 @@ public class StandardTokenizer extends org.apache.lucene.analysis.Tokenizer impl
 
 	@Override
 	public boolean incrementToken() throws IOException {
-		// Check if parser is initialized first
+		// Initialize if not already done (fallback in case reset wasn't called)
+		if (token_source == null && input != null) {
+			CharStream stream = new FastCharStream(input);
+			token_source = new StandardTokenizerTokenManager(stream);
+			token = new Token();
+			jj_ntk = -1;
+			jj_gen = 0;
+			for (int i = 0; i < 1; i++)
+				jj_la1[i] = -1;
+		}
+		// Check if parser is initialized
 		if (token_source == null) {
 			return false;
 		}
