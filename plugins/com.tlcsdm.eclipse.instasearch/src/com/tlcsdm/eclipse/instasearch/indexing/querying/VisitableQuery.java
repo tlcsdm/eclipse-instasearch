@@ -80,10 +80,10 @@ public class VisitableQuery {
 			returnQuery = builder.build();
 		} else if (query instanceof BoostQuery) {
 			BoostQuery bq = (BoostQuery) query;
-			Query newQuery = accept(bq.query(), queryVisitor);
+			Query newQuery = accept(bq.getQuery(), queryVisitor);
 
-			if (newQuery != bq.query()) {
-				returnQuery = new BoostQuery(newQuery, bq.boost());
+			if (newQuery != bq.getQuery()) {
+				returnQuery = new BoostQuery(newQuery, bq.getBoost());
 			}
 		} else if (query instanceof PhraseQuery) {
 			PhraseQuery phraseQuery = (PhraseQuery) query;
