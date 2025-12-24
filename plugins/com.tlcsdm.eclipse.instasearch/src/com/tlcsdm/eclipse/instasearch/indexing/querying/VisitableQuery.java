@@ -73,17 +73,17 @@ public class VisitableQuery {
 			for (BooleanClause boolClause : boolQuery.clauses()) {
 				if (!queryVisitor.visit(boolClause))
 					continue;
-				Query newQuery = accept(boolClause.query(), queryVisitor);
-				builder.add(newQuery, boolClause.occur());
+				Query newQuery = accept(boolClause.getQuery(), queryVisitor);
+				builder.add(newQuery, boolClause.getOccur());
 			}
 
 			returnQuery = builder.build();
 		} else if (query instanceof BoostQuery) {
 			BoostQuery bq = (BoostQuery) query;
-			Query newQuery = accept(bq.query(), queryVisitor);
+			Query newQuery = accept(bq.getQuery(), queryVisitor);
 
-			if (newQuery != bq.query()) {
-				returnQuery = new BoostQuery(newQuery, bq.boost());
+			if (newQuery != bq.getQuery()) {
+				returnQuery = new BoostQuery(newQuery, bq.getBoost());
 			}
 		} else if (query instanceof PhraseQuery) {
 			PhraseQuery phraseQuery = (PhraseQuery) query;

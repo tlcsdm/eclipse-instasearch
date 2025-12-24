@@ -74,7 +74,7 @@ public class QueryFuzzifier extends QueryVisitor {
 
 	@Override
 	public boolean visit(BooleanClause boolClause) {
-		if (boolClause.occur() == Occur.MUST_NOT) // skip prohibited, don't fuzzify
+		if (boolClause.getOccur() == Occur.MUST_NOT) // skip prohibited, don't fuzzify
 			return false;
 
 		return true;
