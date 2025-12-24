@@ -310,6 +310,7 @@ version(s), and exceptions or additional permissions here}.&quot;
       <import plugin="org.eclipse.search"/>
       <import plugin="org.eclipse.jface.text"/>
       <import plugin="org.eclipse.debug.ui"/>
+      <import plugin="org.apache.commons.lang3"/>
    </requires>
 
    <plugin
@@ -367,13 +368,6 @@ version(s), and exceptions or additional permissions here}.&quot;
 
    <plugin
          id="org.apache.lucene.spellchecker"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.apache.commons.lang3"
          download-size="0"
          install-size="0"
          version="0.0.0"
