@@ -130,7 +130,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 		try {
 			query = parseSearchQuery(searchQuery, reader, exact, true);
 
-		} catch (BooleanQuery.TooManyClauses e) { // too many, try without prefix search
+		} catch (IndexSearcher.TooManyClauses e) { // too many, try without prefix search
 			query = parseSearchQuery(searchQuery, reader, exact, false);
 
 		} catch (ParseException e) {
@@ -268,21 +268,25 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 		// Iterate over all leaves (segments) and their terms
 		for (int i = 0; i < reader.leaves().size(); i++) {
 			Terms terms = reader.leaves().get(i).reader().terms(prefixField.toString());
-			if (terms == null) continue;
-			
+			if (terms == null)
+				continue;
+
 			TermsEnum termsEnum = terms.iterator();
 			BytesRef prefix = new BytesRef(prefixText);
-			
+
 			// Seek to the prefix
-			if (termsEnum.seekCeil(prefix) == TermsEnum.SeekStatus.END) continue;
-			
+			if (termsEnum.seekCeil(prefix) == TermsEnum.SeekStatus.END)
+				continue;
+
 			do {
 				BytesRef termBytes = termsEnum.term();
-				if (termBytes == null) break;
-				
+				if (termBytes == null)
+					break;
+
 				String termText = termBytes.utf8ToString();
-				if (!termText.toLowerCase(Locale.ENGLISH).startsWith(prefixText)) break;
-				
+				if (!termText.toLowerCase(Locale.ENGLISH).startsWith(prefixText))
+					break;
+
 				if (!proposals.contains(termText)) {
 					proposals.add(termText);
 				}
@@ -355,7 +359,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 			throws ParseException, IOException {
 		String searchString = searchQuery.getSearchString();
 
-		BooleanQuery.setMaxClauseCount(5000); // so we don't get TooManyClauses exceptions
+		IndexSearcher.setMaxClauseCount(5000); // so we don't get TooManyClauses exceptions
 
 		Query exactQuery = createExactQuery(searchQuery);
 		Query returnQuery;
@@ -374,7 +378,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 
 		returnQuery = rewriteQuery(searchQuery, prefix, returnQuery);
 
-		returnQuery = returnQuery.rewrite(reader); // lucene's rewrite (ie expand prefix queries)
+		returnQuery = returnQuery.rewrite(new IndexSearcher(reader)); // lucene's rewrite (ie expand prefix queries)
 		// System.out.println("q: " + returnQuery + " - exact " + exact);
 
 		return returnQuery;
@@ -473,7 +477,8 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	private Query parserSearchString(String searchString, Analyzer analyzer) throws ParseException {
 		QueryParser queryParser = new QueryParser(Field.CONTENTS.toString(), analyzer);
 		queryParser.setDefaultOperator(Operator.AND); // all fields required
-		// In Lucene 9.x, setLowercaseExpandedTerms was removed - expanded terms are now always lowercased
+		// In Lucene 9.x, setLowercaseExpandedTerms was removed - expanded terms are now
+		// always lowercased
 		queryParser.setPhraseSlop(DEFAULT_PHRASE_SLOP);
 
 		/*
@@ -496,7 +501,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	 */
 	private static Map<String, Float> extractTerms(Query query) {
 		Map<String, Float> terms = new HashMap<String, Float>();
-		
+
 		// Use QueryVisitor to extract terms in Lucene 9.x
 		query.visit(new org.apache.lucene.search.QueryVisitor() {
 			@Override

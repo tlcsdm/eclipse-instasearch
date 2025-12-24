@@ -66,7 +66,6 @@ public class VisitableQuery {
 
 		} else if (query instanceof BooleanQuery) {
 			BooleanQuery boolQuery = (BooleanQuery) query;
-			BooleanQuery newBoolQuery = queryVisitor.visit(boolQuery);
 
 			BooleanQuery.Builder builder = new BooleanQuery.Builder();
 			builder.setMinimumNumberShouldMatch(boolQuery.getMinimumNumberShouldMatch());
