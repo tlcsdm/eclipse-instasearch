@@ -65,7 +65,7 @@ public class LastTermQueryPrefixer extends QueryVisitor {
 	public boolean visit(BooleanClause boolClause) {
 		clauseCount--;
 
-		if (boolClause.getOccur() == Occur.MUST_NOT) // skip prohibited
+		if (boolClause.occur() == Occur.MUST_NOT) // skip prohibited
 			return false;
 
 		return true;

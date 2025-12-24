@@ -4,7 +4,14 @@ InstaSearch is an Eclipse IDE plug-in for performing quick and advanced search o
 
 Each file then can be previewed using few most matching and relevant lines. A double-click on the match leads to the matching line in the file.
 
-Now Support Eclipse 2024-06 and later, Mac OS X, Linux (with nautilus) and Windows.
+Because Eclipse 2024-06 through 2024-12 are built on Apache Lucene 9.10.0 or later,  
+plugin version 1.0.0 provides initial support for this Lucene version range.  
+* Apache Lucene 9.10.0+
+* JDK 17
+
+Starting from version 1.1.0, the plugin supports Eclipse 2025-03 and later, and upgrades its dependency to Apache Lucene 10.0.0 or later.  
+* Apache Lucene 10.0.0+
+* JDK 21
 
 ## Use  
 
@@ -70,7 +77,8 @@ mvn clean org.eclipse.tycho:tycho-versions-plugin:set-version -DnewVersion=2.0.0
 
 ## Install
 
-1. Add `https://raw.githubusercontent.com/tlcsdm/eclipse-instasearch/update_site/` as the upgrade location in Eclipse.
+1. For Eclipse 2024-06 ~ 2024-12, add `https://raw.githubusercontent.com/tlcsdm/eclipse-instasearch/update_site_2024/` as the upgrade location in Eclipse.  
+   For Eclipse 2025-03 and later, add `https://raw.githubusercontent.com/tlcsdm/eclipse-instasearch/update_site/` as the upgrade location in Eclipse.  
 2. Download from [Jenkins](https://jenkins.tlcsdm.com/job/eclipse-plugin/job/eclipse-instasearch)
 3. <table style="border: none;">
   <tbody>

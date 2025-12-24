@@ -73,8 +73,8 @@ public class VisitableQuery {
 			for (BooleanClause boolClause : boolQuery.clauses()) {
 				if (!queryVisitor.visit(boolClause))
 					continue;
-				Query newQuery = accept(boolClause.getQuery(), queryVisitor);
-				builder.add(newQuery, boolClause.getOccur());
+				Query newQuery = accept(boolClause.query(), queryVisitor);
+				builder.add(newQuery, boolClause.occur());
 			}
 
 			returnQuery = builder.build();
