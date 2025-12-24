@@ -7,9 +7,9 @@ Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: com.tlcsdm.eclipse.instasearch.InstaSearchPlugin
 Bundle-Vendor: %providerName
 Require-Bundle: org.eclipse.ui,
- org.apache.lucene.core,
- org.apache.lucene.analysis-common,
- org.apache.lucene.queryparser,
+ org.apache.lucene.core;bundle-version="9.10.0",
+ org.apache.lucene.analysis-common;bundle-version="9.10.0",
+ org.apache.lucene.queryparser;bundle-version="9.10.0",
  org.apache.commons.lang3,
  org.eclipse.ui.ide,
  org.eclipse.ui.editors,
@@ -22,8 +22,8 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.jdt.ui;resolution:=optional,
  org.eclipse.jdt.core;resolution:=optional,
  org.junit;resolution:=optional,
- org.apache.lucene.misc,
- org.apache.lucene.queries
+ org.apache.lucene.misc;bundle-version="9.10.0",
+ org.apache.lucene.queries;bundle-version="9.10.0"
 Bundle-ActivationPolicy: lazy
 Bundle-Localization: plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-17
