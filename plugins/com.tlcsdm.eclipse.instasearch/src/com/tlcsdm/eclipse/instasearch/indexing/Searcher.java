@@ -130,7 +130,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 		try {
 			query = parseSearchQuery(searchQuery, reader, exact, true);
 
-		} catch (IndexSearcher.TooManyClauses e) { // too many, try without prefix search
+		} catch (BooleanQuery.TooManyClauses e) { // too many, try without prefix search
 			query = parseSearchQuery(searchQuery, reader, exact, false);
 
 		} catch (ParseException e) {

@@ -18,9 +18,11 @@ import java.util.Locale;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
@@ -119,11 +121,16 @@ public class SearchResultDoc {
 			return 0;
 		}
 		
-		int termFreq = (int) termsEnum.totalTermFreq();
+		// Get term frequency from postings
+		int termFreq = 0;
+		PostingsEnum postings = termsEnum.postings(null, PostingsEnum.FREQS);
+		if (postings != null && postings.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+			termFreq = postings.freq();
+		}
+		
 		int numDocs = reader.numDocs();
 		int docFreq = reader.docFreq(new Term(Field.CONTENTS.toString(), term));
 		
-		ClassicSimilarity sim = Searcher.SIMILARITY;
 		float tf = (float) Math.sqrt(termFreq);
 		float idf = (float) (Math.log(numDocs / (double) (docFreq + 1)) + 1.0);
 		
@@ -193,7 +200,11 @@ public class SearchResultDoc {
 		for (String queryTerm : queryTerms) {
 			BytesRef termBytes = new BytesRef(queryTerm);
 			if (termsEnum.seekExact(termBytes)) {
-				freqSum += termsEnum.totalTermFreq();
+				// Get term frequency from postings
+				PostingsEnum postings = termsEnum.postings(null, PostingsEnum.FREQS);
+				if (postings != null && postings.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+					freqSum += postings.freq();
+				}
 			}
 		}
 

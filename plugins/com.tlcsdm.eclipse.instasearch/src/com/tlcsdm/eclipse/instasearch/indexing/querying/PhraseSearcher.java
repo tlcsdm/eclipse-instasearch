@@ -16,6 +16,7 @@ import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.PhraseQuery;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 
 import com.tlcsdm.eclipse.instasearch.indexing.Field;
@@ -53,7 +54,12 @@ public class PhraseSearcher extends QueryVisitor {
 		builder.add(phraseQuery, Occur.SHOULD);
 		builder.add(new BoostQuery(boolQuery, 0.5f), Occur.SHOULD);
 
-		return (BooleanQuery) builder.build();
+		Query resultQuery = builder.build();
+		// BooleanQuery.Builder.build() always returns BooleanQuery when clauses are added
+		if (resultQuery instanceof BooleanQuery) {
+			return (BooleanQuery) resultQuery;
+		}
+		return boolQuery;
 	}
 
 }
