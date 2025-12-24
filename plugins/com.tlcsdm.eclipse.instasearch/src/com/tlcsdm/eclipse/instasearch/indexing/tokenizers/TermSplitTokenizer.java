@@ -21,7 +21,11 @@ import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 /**
- * Splits terms. Returns the original term and its split parts
+ * Splits terms. Returns the original term and its split parts.
+ * 
+ * In Lucene 9.x, offsets must be strictly non-decreasing. When returnOriginalTerm()
+ * is true, we return split parts at the same position (position increment 0)
+ * using the original term's offsets to maintain monotonic offset ordering.
  */
 public abstract class TermSplitTokenizer extends TokenFilter {
 
@@ -30,6 +34,10 @@ public abstract class TermSplitTokenizer extends TokenFilter {
     private CharTermAttribute termAtt;
     private OffsetAttribute offsetAtt;
     private PositionIncrementAttribute posAtt;
+    
+    // Track the last offset we emitted to ensure monotonic offsets
+    private int lastStartOffset = 0;
+    private int lastEndOffset = 0;
 
     public TermSplitTokenizer(TokenStream in) {
         super(in);
@@ -48,6 +56,10 @@ public abstract class TermSplitTokenizer extends TokenFilter {
         if (!tokens.isEmpty()) {
             applyToken(tokens.removeFirst());
         } else if (input.incrementToken()) {
+            // Update tracking from input token
+            lastStartOffset = offsetAtt.startOffset();
+            lastEndOffset = offsetAtt.endOffset();
+            
             splitIntoTokens();
 
             if (!tokens.isEmpty()) {
@@ -60,21 +72,33 @@ public abstract class TermSplitTokenizer extends TokenFilter {
 
         return true;
     }
+    
+    @Override
+    public void reset() throws IOException {
+        super.reset();
+        tokens.clear();
+        lastStartOffset = 0;
+        lastEndOffset = 0;
+    }
 
     private void splitIntoTokens() {
         String term = termAtt.toString();
         String[] termParts = splitTerm(term);
 
         if (termParts.length > 1) {
-            int termPos = offsetAtt.startOffset();
+            // Use the parent token's offsets for all split tokens.
+            // In Lucene 9.x, offsets must be monotonically non-decreasing.
+            // Split tokens share the same position (posInc=0) and use parent offsets.
+            int parentStartOffset = lastStartOffset;
+            int parentEndOffset = lastEndOffset;
 
             for (int i = 0; i < termParts.length; i++) {
                 String termPart = termParts[i];
-                int termPartPos = termPos + term.indexOf(termPart);
-                int termPartEndPos = termPartPos + termPart.length();
-
-                SimpleToken newToken = new SimpleToken(termPart, termPartPos, termPartEndPos, 0);
-                tokens.add(newToken);
+                if (termPart != null && !termPart.isEmpty()) {
+                    // All split tokens use the parent's offsets to maintain monotonic ordering
+                    SimpleToken newToken = new SimpleToken(termPart, parentStartOffset, parentEndOffset, 0);
+                    tokens.add(newToken);
+                }
             }
         }
     }
@@ -83,7 +107,12 @@ public abstract class TermSplitTokenizer extends TokenFilter {
         termAtt.setEmpty();
         termAtt.append(token.term);
         posAtt.setPositionIncrement(token.posInc);
-        offsetAtt.setOffset(token.startOffset, token.endOffset);
+        // Ensure offsets are monotonic
+        int startOff = Math.max(token.startOffset, lastStartOffset);
+        int endOff = Math.max(token.endOffset, startOff);
+        offsetAtt.setOffset(startOff, endOff);
+        lastStartOffset = startOff;
+        lastEndOffset = endOff;
     }
 
     // Simple container replacing deprecated Token
