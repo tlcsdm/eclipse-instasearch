@@ -312,8 +312,6 @@ version(s), and exceptions or additional permissions here}.&quot;
       <import plugin="org.eclipse.search"/>
       <import plugin="org.eclipse.jface.text"/>
       <import plugin="org.eclipse.debug.ui"/>
-      <import plugin="org.apache.lucene.misc" version="9.10.0" match="greaterOrEqual"/>
-      <import plugin="org.apache.lucene.queries" version="9.10.0" match="greaterOrEqual"/>
       <import plugin="org.apache.lucene.queryparser" version="9.10.0" match="greaterOrEqual"/>
       <import plugin="org.apache.commons.lang3"/>
    </requires>

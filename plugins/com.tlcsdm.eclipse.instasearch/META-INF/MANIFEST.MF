@@ -21,9 +21,7 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.debug.ui,
  org.eclipse.jdt.ui;resolution:=optional,
  org.eclipse.jdt.core;resolution:=optional,
- org.junit;resolution:=optional,
- org.apache.lucene.misc;bundle-version="9.10.0",
- org.apache.lucene.queries;bundle-version="9.10.0"
+ org.junit;resolution:=optional
 Bundle-ActivationPolicy: lazy
 Bundle-Localization: plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-17
