@@ -169,7 +169,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 		// Use IndexSearcher.search to get TopDocs
 		TopDocs topDocs = indexSearcher.search(query, maxResults);
 
-		if (topDocs.totalHits.value == 0)
+		if (topDocs.totalHits.value() == 0)
 			return null;
 
 		ScoreDoc[] hits = topDocs.scoreDocs;
