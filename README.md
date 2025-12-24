@@ -4,7 +4,7 @@ InstaSearch is an Eclipse IDE plug-in for performing quick and advanced search o
 
 Each file then can be previewed using few most matching and relevant lines. A double-click on the match leads to the matching line in the file.
 
-Now Support Eclipse 2024-06 and later, Mac OS X, Linux (with nautilus) and Windows.
+Now Support Eclipse 2025-03 and later, Mac OS X, Linux (with nautilus) and Windows.
 
 ## Use  
 
