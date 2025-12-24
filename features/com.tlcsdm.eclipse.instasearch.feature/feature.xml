@@ -303,8 +303,8 @@ version(s), and exceptions or additional permissions here}.&quot;
    <requires>
       <import plugin="org.eclipse.core.runtime" version="3.5.0" match="greaterOrEqual"/>
       <import plugin="org.eclipse.ui" version="3.5.0" match="greaterOrEqual"/>
-      <import plugin="org.apache.lucene" version="2.9.1" match="greaterOrEqual"/>
-      <import plugin="org.apache.lucene.analysis" version="2.9.1" match="greaterOrEqual"/>
+      <import plugin="org.apache.lucene.core" version="9.10.0" match="greaterOrEqual"/>
+      <import plugin="org.apache.lucene.analysis-common" version="9.10.0" match="greaterOrEqual"/>
       <import plugin="org.eclipse.ui.ide"/>
       <import plugin="org.eclipse.ui.editors"/>
       <import plugin="org.eclipse.ui.workbench.texteditor"/>
@@ -312,12 +312,9 @@ version(s), and exceptions or additional permissions here}.&quot;
       <import plugin="org.eclipse.search"/>
       <import plugin="org.eclipse.jface.text"/>
       <import plugin="org.eclipse.debug.ui"/>
-      <import plugin="org.apache.lucene.highlighter" version="2.9.1" match="greaterOrEqual"/>
-      <import plugin="org.apache.lucene.memory" version="2.9.1" match="greaterOrEqual"/>
-      <import plugin="org.apache.lucene.misc" version="2.9.1" match="greaterOrEqual"/>
-      <import plugin="org.apache.lucene.queries" version="2.9.1" match="greaterOrEqual"/>
-      <import plugin="org.apache.lucene.snowball" version="2.9.1" match="greaterOrEqual"/>
-      <import plugin="org.apache.lucene.spellchecker" version="2.9.1" match="greaterOrEqual"/>
+      <import plugin="org.apache.lucene.misc" version="9.10.0" match="greaterOrEqual"/>
+      <import plugin="org.apache.lucene.queries" version="9.10.0" match="greaterOrEqual"/>
+      <import plugin="org.apache.lucene.queryparser" version="9.10.0" match="greaterOrEqual"/>
       <import plugin="org.apache.commons.lang3"/>
    </requires>
 
