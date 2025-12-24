@@ -436,16 +436,31 @@ class ResultContentProvider implements ITreeContentProvider {
 		float[] vect1 = lineMatches1.getScoreVector();
 		float[] vect2 = lineMatches2.getScoreVector();
 
+		// Handle case where vectors have different lengths
+		int minLength = Math.min(vect1.length, vect2.length);
+		if (minLength == 0) {
+			return 0;
+		}
+
 		double dotProduct = 0.0;
 		double magnitude1 = 0.0;
 		double magnitude2 = 0.0;
-		for (int i = 0; i < vect1.length; i++) {
+		
+		// Calculate dot product only for common indices
+		for (int i = 0; i < minLength; i++) {
 			double val1 = vect1[i];
 			double val2 = vect2[i];
-			magnitude1 += val1 * val1;
-			magnitude2 += val2 * val2;
 			dotProduct += val1 * val2;
 		}
+		
+		// Calculate full magnitude for each vector
+		for (int i = 0; i < vect1.length; i++) {
+			magnitude1 += vect1[i] * vect1[i];
+		}
+		for (int i = 0; i < vect2.length; i++) {
+			magnitude2 += vect2[i] * vect2[i];
+		}
+		
 		magnitude1 = Math.sqrt(magnitude1);
 		magnitude2 = Math.sqrt(magnitude2);
 		return (magnitude1 == 0 || magnitude2 == 0) ? 0 : dotProduct / (magnitude1 * magnitude2);
