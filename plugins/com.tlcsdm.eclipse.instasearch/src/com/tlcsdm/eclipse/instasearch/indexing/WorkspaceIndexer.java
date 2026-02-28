@@ -98,7 +98,6 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 		indexWriter.forceMerge(1, true);
 
 		indexWriter.close();
-		indexDirectory.close();
 
 		getIndexChangeListener().onIndexUpdate();
 
