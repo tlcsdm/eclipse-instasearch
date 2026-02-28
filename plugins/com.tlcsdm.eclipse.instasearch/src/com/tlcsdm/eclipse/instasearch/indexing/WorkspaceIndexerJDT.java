@@ -212,8 +212,8 @@ public class WorkspaceIndexerJDT extends WorkspaceIndexer {
 	private List<IPackageFragmentRoot> getJars(IJavaModel javaModel) throws JavaModelException {
 
 		IJavaProject[] projects = javaModel.getJavaProjects();
-		TreeSet<String> jarNames = new TreeSet<String>();
-		LinkedList<IPackageFragmentRoot> jars = new LinkedList<IPackageFragmentRoot>();
+		TreeSet<String> jarNames = new TreeSet<>();
+		LinkedList<IPackageFragmentRoot> jars = new LinkedList<>();
 
 		for (IJavaProject javaProj : projects) {
 

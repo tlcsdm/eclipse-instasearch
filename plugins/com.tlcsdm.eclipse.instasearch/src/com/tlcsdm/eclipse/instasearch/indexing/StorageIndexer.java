@@ -120,19 +120,15 @@ public class StorageIndexer {
 	 */
 	public boolean isReadable() {
 
-		try {
-			DirectoryReader reader = DirectoryReader.open(getIndexDir());
-			reader.close();
-
+		try (DirectoryReader reader = DirectoryReader.open(getIndexDir())) {
+			return true;
 		} catch (IOException readingException) {
 			return false;
 		}
-
-		return true;
 	}
 
 	/**
-	 * Delethe the whole index
+	 * Delete the whole index
 	 * 
 	 * @throws Exception
 	 */
@@ -208,22 +204,23 @@ public class StorageIndexer {
 		} catch (Exception e) {
 			throw new IOException(e);
 		}
-		BufferedReader isReader = new BufferedReader(new InputStreamReader(contents));
 		IPath fullPath = storage.getFullPath();
 		String ext = fullPath.getFileExtension();
 		if (ext == null)
 			ext = NO_VALUE;
 
-		Document doc = new Document();
-		doc.add(createLuceneTextField(Field.CONTENTS, isReader));
-		doc.add(createLuceneStoredField(Field.FILE, fullPath.toString()));
-		doc.add(createLuceneStoredField(Field.PROJ, projectName));
-		doc.add(createLuceneStoredField(Field.NAME, fullPath.lastSegment()));
-		doc.add(createLuceneStoredField(Field.EXT, ext.toLowerCase(Locale.ENGLISH)));
-		doc.add(createLuceneStoredField(Field.MODIFIED, Long.toString(modificationStamp)));
-		doc.add(createLuceneStoredField(Field.JAR, (jar == null) ? NO_VALUE : jar));
+		try (BufferedReader isReader = new BufferedReader(new InputStreamReader(contents))) {
+			Document doc = new Document();
+			doc.add(createLuceneTextField(Field.CONTENTS, isReader));
+			doc.add(createLuceneStoredField(Field.FILE, fullPath.toString()));
+			doc.add(createLuceneStoredField(Field.PROJ, projectName));
+			doc.add(createLuceneStoredField(Field.NAME, fullPath.lastSegment()));
+			doc.add(createLuceneStoredField(Field.EXT, ext.toLowerCase(Locale.ENGLISH)));
+			doc.add(createLuceneStoredField(Field.MODIFIED, Long.toString(modificationStamp)));
+			doc.add(createLuceneStoredField(Field.JAR, (jar == null) ? NO_VALUE : jar));
 
-		indexWriter.addDocument(doc);
+			indexWriter.addDocument(doc);
+		}
 	}
 
 	private static void runRetryingRunnable(RetryingRunnable runnable) throws Exception {
@@ -350,28 +347,27 @@ public class StorageIndexer {
 	 * @throws IOException
 	 */
 	public static Map<String, List<Integer>> extractTextTerms(String text) throws IOException {
-		Map<String, List<Integer>> terms = new HashMap<String, List<Integer>>();
-		TokenStream tokenStream = fileAnalyzer.tokenStream(Field.CONTENTS.toString(), new StringReader(text));
+		Map<String, List<Integer>> terms = new HashMap<>();
+		try (TokenStream tokenStream = fileAnalyzer.tokenStream(Field.CONTENTS.toString(), new StringReader(text))) {
+			CharTermAttribute termAtt = tokenStream.addAttribute(CharTermAttribute.class);
+			OffsetAttribute offsetAtt = tokenStream.addAttribute(OffsetAttribute.class);
 
-		CharTermAttribute termAtt = tokenStream.addAttribute(CharTermAttribute.class);
-		OffsetAttribute offsetAtt = tokenStream.addAttribute(OffsetAttribute.class);
+			tokenStream.reset();
+			while (tokenStream.incrementToken()) {
+				String termText = termAtt.toString().toLowerCase(Locale.ENGLISH);// get token text
+				int offset = offsetAtt.startOffset();
 
-		tokenStream.reset();
-		while (tokenStream.incrementToken()) {
-			String termText = termAtt.toString().toLowerCase(Locale.ENGLISH);// get token text
-			int offset = offsetAtt.startOffset();
+				List<Integer> offsets = terms.get(termText);
 
-			List<Integer> offsets = terms.get(termText);
+				if (offsets == null) {
+					offsets = new LinkedList<>();
+					terms.put(termText, offsets);
+				}
 
-			if (offsets == null) {
-				offsets = new LinkedList<Integer>();
-				terms.put(termText, offsets);
+				offsets.add(offset);
 			}
-
-			offsets.add(offset);
+			tokenStream.end();
 		}
-		tokenStream.end();
-		tokenStream.close();
 
 		return terms;
 	}

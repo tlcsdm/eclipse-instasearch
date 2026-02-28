@@ -406,7 +406,7 @@ public class InstaSearchView extends ViewPart
 					try {
 						handlerService.executeCommand("com.tlcsdm.eclipse.instasearch.commands.buildIndex", null);
 					} catch (Exception e) {
-						e.printStackTrace();
+						InstaSearchPlugin.log(e);
 					}
 				}
 			}

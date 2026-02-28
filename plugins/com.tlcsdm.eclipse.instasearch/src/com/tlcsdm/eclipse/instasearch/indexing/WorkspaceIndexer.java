@@ -89,7 +89,6 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 		getIndexChangeListener().onIndexReset();
 
 		deleteIndex();
-		Directory indexDirectory = FSDirectory.open(getIndexDirLocation().toPath());
 
 		IndexWriter indexWriter = createIndexWriter(true);
 
@@ -156,7 +155,7 @@ public class WorkspaceIndexer extends StorageIndexer implements ISchedulingRule,
 		if (excludeDirList == null || "".equals(excludeDirList))
 			return Collections.emptyList();
 
-		List<Pattern> excludeDirSet = new ArrayList<Pattern>();
+		List<Pattern> excludeDirSet = new ArrayList<>();
 		String[] excludedDirArr = excludeDirList.split(File.pathSeparator);
 
 		for (String wildCardPattern : excludedDirArr) {

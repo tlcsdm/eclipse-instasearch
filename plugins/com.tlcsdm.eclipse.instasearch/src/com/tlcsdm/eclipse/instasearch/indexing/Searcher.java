@@ -149,9 +149,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 			}
 		}
 
-		SearchResult searchResut = collectSearchResults(searchQuery, indexSearcher, reader, query);
-
-		return searchResut;
+		return collectSearchResults(searchQuery, indexSearcher, reader, query);
 	}
 
 	private SearchResult collectSearchResults(SearchQuery searchQuery, IndexSearcher indexSearcher, IndexReader reader,
@@ -173,7 +171,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 			return null;
 
 		ScoreDoc[] hits = topDocs.scoreDocs;
-		ArrayList<SearchResultDoc> resultDocs = new ArrayList<SearchResultDoc>(hits.length);
+		ArrayList<SearchResultDoc> resultDocs = new ArrayList<>(hits.length);
 
 		for (int i = 0; i < hits.length && !searchQuery.isCanceled(); i++) {
 			int docId = hits[i].doc;
@@ -261,7 +259,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	 * @throws IOException
 	 */
 	public List<String> getProposals(String prefixText, Field prefixField) throws IOException {
-		ArrayList<String> proposals = new ArrayList<String>();
+		ArrayList<String> proposals = new ArrayList<>();
 		IndexReader reader = getIndexSearcher().getIndexReader();
 		prefixText = prefixText.toLowerCase(Locale.ENGLISH);
 
@@ -413,7 +411,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	private static Query convertToPhraseQuery(Query query) {
 		PhraseQuery.Builder phraseQueryBuilder = new PhraseQuery.Builder();
 
-		Set<Term> terms = new LinkedHashSet<Term>();
+		Set<Term> terms = new LinkedHashSet<>();
 
 		try {
 			query.visit(new org.apache.lucene.search.QueryVisitor() {
@@ -500,7 +498,7 @@ public class Searcher implements IPropertyChangeListener, IndexChangeListener {
 	 * @return
 	 */
 	private static Map<String, Float> extractTerms(Query query) {
-		Map<String, Float> terms = new HashMap<String, Float>();
+		Map<String, Float> terms = new HashMap<>();
 
 		// Use QueryVisitor to extract terms in Lucene 9.x
 		query.visit(new org.apache.lucene.search.QueryVisitor() {
