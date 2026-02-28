@@ -77,7 +77,7 @@ class ResultContentProvider implements ITreeContentProvider {
 	}
 
 	public void inputChanged(Viewer v, Object oldInput, Object newSearch) {
-		if (newSearch == null || !(newSearch instanceof SearchQuery)) {
+		if (!(newSearch instanceof SearchQuery)) {
 			currentSearchQuery = null; // clear cache
 			cachedResults = null;
 		}
@@ -87,10 +87,9 @@ class ResultContentProvider implements ITreeContentProvider {
 	}
 
 	public Object[] getElements(Object searchQueryObj) {
-		if (searchQueryObj == null || !(searchQueryObj instanceof SearchQuery))
+		if (!(searchQueryObj instanceof SearchQuery searchQuery))
 			return Collections.EMPTY_LIST.toArray(); // not searching
 
-		SearchQuery searchQuery = (SearchQuery) searchQueryObj;
 		String searchString = searchQuery.getSearchString();
 
 		if (searchString == null || searchString.toString().length() < Searcher.MIN_QUERY_LENGTH)
@@ -196,9 +195,7 @@ class ResultContentProvider implements ITreeContentProvider {
 	}
 
 	public Object[] getChildren(Object parent) {
-		if (parent instanceof SearchResultDoc) {
-
-			SearchResultDoc doc = (SearchResultDoc) parent;
+		if (parent instanceof SearchResultDoc doc) {
 
 			if (cachedResultDoc != null && doc.equals(cachedResultDoc))
 				return cachedChildren; // cache results
@@ -221,8 +218,7 @@ class ResultContentProvider implements ITreeContentProvider {
 			cachedChildren = children;
 
 			return children;
-		} else if (parent instanceof Exception) {
-			Exception e = (Exception) parent;
+		} else if (parent instanceof Exception e) {
 			return e.getStackTrace();
 		}
 
@@ -260,10 +256,9 @@ class ResultContentProvider implements ITreeContentProvider {
 			return null;
 		}
 
-		InputStream fileInputStream = null;
+		InputStream fileInputStream;
 
-		if (f instanceof IFile) {
-			IFile file = (IFile) f;
+		if (f instanceof IFile file) {
 			if (!file.exists())
 				return null;
 			fileInputStream = file.getContents(true);
@@ -271,51 +266,47 @@ class ResultContentProvider implements ITreeContentProvider {
 			fileInputStream = f.getContents();
 		}
 
-		LineNumberReader lineReader = new LineNumberReader(new InputStreamReader(fileInputStream)); // is a buffered
-																									// reader
+		try (LineNumberReader lineReader = new LineNumberReader(new InputStreamReader(fileInputStream))) {
+			String line;
 
-		String line;
+			// Read through file one line at a time
+			while ((line = lineReader.readLine()) != null) {
 
-		// Read through file one line at a time
-		while ((line = lineReader.readLine()) != null) {
+				if (callback != null && callback.isCanceled())
+					break;
 
-			if (callback != null && callback.isCanceled())
-				break;
-			// if( currentSearchQuery.isCanceled() ) break;
+				if (line.isEmpty())
+					continue;
 
-			if ("".equals(line))
-				continue;
+				Map<String, List<Integer>> lineTerms = StorageIndexer.extractTextTerms(line);
+				if (lineTerms.isEmpty())
+					continue;
 
-			Map<String, List<Integer>> lineTerms = StorageIndexer.extractTextTerms(line);
-			if (lineTerms.isEmpty())
-				continue;
+				HashSet<String> matchedTerms = new HashSet<>(searchTerms.keySet()); // search terms that appear on
+																					// this line
+				matchedTerms.retainAll(lineTerms.keySet());
 
-			HashSet<String> matchedTerms = new HashSet<String>(searchTerms.keySet()); // search terms that appear on
-																						// this line
-			matchedTerms.retainAll(lineTerms.keySet());
+				if (matchedTerms.isEmpty() && matchCount != 0 && limit) // if have matches in general, but not on this
+																		// line, then skip
+					continue;
 
-			if (matchedTerms.isEmpty() && matchCount != 0 && limit) // if have matches in general, but not on this line,
-																	// then skip
-				continue;
+				float[] lineTermScoreVector = doc.getTermScoreVector(lineTerms.keySet());
+				float[] matchedTermScoreVector = doc.getTermScoreVector(matchedTerms);
 
-			float[] lineTermScoreVector = doc.getTermScoreVector(lineTerms.keySet());
-			float[] matchedTermScoreVector = doc.getTermScoreVector(matchedTerms);
+				MatchLine matchLine = new MatchLine(doc, line, lineReader.getLineNumber(), matchedTerms,
+						lineTermScoreVector, matchedTermScoreVector);
+				matchedLines.add(matchLine);
 
-			MatchLine matchLine = new MatchLine(doc, line, lineReader.getLineNumber(), matchedTerms,
-					lineTermScoreVector, matchedTermScoreVector);
-			matchedLines.add(matchLine);
+				addMatches(matchLine, lineTerms, matchedTerms, searchString);
+				if (callback != null)
+					callback.matchFound(matchLine);
 
-			addMatches(matchLine, lineTerms, matchedTerms, searchString);
-			if (callback != null)
-				callback.matchFound(matchLine);
+				if (lineReader.getLineNumber() > MAX_LINES_TO_PROCESS)
+					break;
 
-			if (lineReader.getLineNumber() > MAX_LINES_TO_PROCESS)
-				break;
-
-			// TODO: break if all current matches have high score (eg >0.9)
+				// TODO: break if all current matches have high score (eg >0.9)
+			}
 		}
-
-		lineReader.close();
 
 		if (limit && matchedLines.size() > maxMatches) {
 			matchedLines = getTopMatchLines(maxMatches, matchedLines); // return TOP N lines
@@ -577,7 +568,7 @@ class ResultContentProvider implements ITreeContentProvider {
 			if (diff == 0)
 				diff = lineMatches.matchedTermCount - matchedTermCount;
 			if (diff == 0)
-				Double.compare(lineMatches.matchedTermBoost, matchedTermBoost);
+				diff = Double.compare(lineMatches.matchedTermBoost, matchedTermBoost);
 			if (diff == 0)
 				diff = Double.compare(lineMatches.termScore, termScore);
 			if (diff == 0)

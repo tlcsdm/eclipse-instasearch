@@ -12,6 +12,7 @@
 package com.tlcsdm.eclipse.instasearch.indexing;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -113,10 +114,8 @@ public class SearchQuery {
 	public boolean equals(Object obj) {
 		if (obj == this)
 			return true;
-		if (obj == null || !(obj instanceof SearchQuery))
+		if (!(obj instanceof SearchQuery sq))
 			return false;
-
-		SearchQuery sq = (SearchQuery) obj;
 
 		if (fuzzy != sq.isFuzzy())
 			return false;
@@ -126,13 +125,15 @@ public class SearchQuery {
 			return false;
 		if (!searchString.equals(sq.getSearchString()))
 			return false;
-		if (filter != null && sq.filter != null) {
-			if (!filter.equals(sq.filter))
-				return false;
-		} else if (filter != sq.filter)
-			return false; // one is null
+		if (!Objects.equals(filter, sq.filter))
+			return false;
 
 		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(searchString, maxResults, exact, fuzzy, filter);
 	}
 
 	/**

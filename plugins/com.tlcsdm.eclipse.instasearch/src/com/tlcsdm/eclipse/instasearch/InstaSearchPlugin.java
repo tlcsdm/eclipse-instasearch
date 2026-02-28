@@ -105,7 +105,7 @@ public final class InstaSearchPlugin extends AbstractUIPlugin {
 	 */
 	public static List<String> getProjectNames() {
 
-		ArrayList<String> projectNames = new ArrayList<String>();
+		ArrayList<String> projectNames = new ArrayList<>();
 		if (getWorkspaceRoot() == null)
 			return projectNames;
 
@@ -127,7 +127,7 @@ public final class InstaSearchPlugin extends AbstractUIPlugin {
 	 * @return WorkingSets
 	 */
 	public static List<String> getWorkingSets() {
-		ArrayList<String> workingSets = new ArrayList<String>();
+		ArrayList<String> workingSets = new ArrayList<>();
 
 		IWorkingSetManager wsManager = PlatformUI.getWorkbench().getWorkingSetManager();
 		if (wsManager == null)
@@ -160,12 +160,11 @@ public final class InstaSearchPlugin extends AbstractUIPlugin {
 		if (ws == null)
 			return emptyResults;
 
-		ArrayList<String> projects = new ArrayList<String>();
+		ArrayList<String> projects = new ArrayList<>();
 		IAdaptable elements[] = ws.getElements();
 
 		for (IAdaptable elem : elements) {
-			if (elem instanceof IProject) {
-				IProject proj = (IProject) elem;
+			if (elem instanceof IProject proj) {
 				projects.add(proj.getName());
 			} else {
 				IProject proj = (IProject) elem.getAdapter(IProject.class);
@@ -262,14 +261,16 @@ public final class InstaSearchPlugin extends AbstractUIPlugin {
 
 		String msg = StringUtils.join(msgs, ", ");
 
-		System.out.println(msg);
+		Status status = new Status(IStatus.INFO, getPluginId(), msg);
+		log(status);
 	}
 
 	public static void debug(Throwable t) {
 		if (!isDebug())
 			return;
 
-		t.printStackTrace();
+		Status status = new Status(IStatus.INFO, getPluginId(), t.getMessage(), t);
+		log(status);
 	}
 
 	public static void log(Exception e) {
