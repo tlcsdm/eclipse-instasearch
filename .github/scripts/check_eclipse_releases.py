@@ -23,8 +23,8 @@ def get_eclipse_release_versions():
     Generate list of Eclipse release versions based on quarterly release schedule.
     Returns versions from 2024-06 onwards up to 1 year in the future.
     """
-    start_year = 2024
-    start_month = 6  # Start from 2024-06
+    start_year = 2025
+    start_month = 3  # Start from 2025-03
 
     # Calculate end date (current year + 1 year)
     current_year = datetime.now().year
